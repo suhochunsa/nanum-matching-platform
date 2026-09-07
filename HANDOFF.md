@@ -29,7 +29,7 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 - Vite + React 19, react-router-dom v7 (SPA 라우팅)
 - Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, `src/index.css`의 `@theme`에 브랜드 색상 정의)
 - 색상: 어두운 청록색 계열(`brand-*`, UI 스케치의 남색 박스 색감 참고) + 주황색 강조색(`accent-*`)
-- 아직 GitHub 저장소는 만들지 않음 (계획서 1차시 항목, 다음 단계로 남아있음)
+- GitHub 저장소: https://github.com/suhochunsa/nanum-matching-platform (private, `main` 브랜치)
 - 아직 Supabase 연동 없음 — 전부 `src/data/mockData.js`의 더미 데이터로 동작
 
 ## 화면 구성 (구현 완료, mock 데이터 기반)
@@ -57,7 +57,7 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
-- [x] 1차시: GitHub 저장소 개설 — **아직 안 함, 다음 작업으로 추천**
+- [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)
 - [x] 2차시: 메인 화면 뼈대 (완료 — HomePage)
 - [x] 3차시: 기부자·기관 입력 폼 (완료 — DonorPage/InstitutionPage)
 - [ ] 4차시: 매칭 처리 로직 고도화 (수량·상태 조건, 유사도 계산)
