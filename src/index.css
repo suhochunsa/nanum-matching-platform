@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --color-brand-50: #eef6f8;
+  --color-brand-100: #d3e9ee;
+  --color-brand-200: #a7d3dd;
+  --color-brand-300: #72b6c6;
+  --color-brand-400: #3f93a9;
+  --color-brand-500: #1f7690;
+  --color-brand-600: #185d74;
+  --color-brand-700: #14495c;
+  --color-brand-800: #123c4c;
+  --color-brand-900: #0f2f3c;
+  --color-accent-500: #e8935a;
+  --color-accent-600: #d6793d;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f6f8f9;
+  color: #14232a;
+}
