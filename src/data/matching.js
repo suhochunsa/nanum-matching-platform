@@ -1,3 +1,4 @@
+import { parentOf, parentsOf } from './categories.js'
 import { donorItems, institutionNeeds } from './mockData.js'
 
 // 매칭 점수 = 아래 네 항목(각 0~1)을 가중합한 값(0~100점).
@@ -6,11 +7,15 @@ export const WEIGHTS = { category: 0.35, name: 0.3, quantity: 0.2, condition: 0.
 // 기부 물품 상태가 좋을수록 높은 점수
 export const CONDITION_SCORE = { '새 상품': 1, '사용감 적음': 0.7, '사용감 있음': 0.4 }
 
-// 카테고리가 달라도 이름이 이 값 이상 비슷하면 후보에 넣는다.
+// 세부 카테고리는 다르지만 큰 카테고리가 같을 때 주는 부분 점수 (예: 의류/아우터 ↔ 의류/상의)
+const SAME_PARENT_SCORE = 0.5
+
+// 카테고리가 하나도 안 겹쳐도 이름이 이 값 이상 비슷하면 후보에 넣는다.
 // (예: 카테고리를 '기타'로 골랐지만 이름이 "겨울 패딩"인 경우)
 const NAME_GATE = 0.25
 
-// 크레딧 적립 규칙(임시): 수량 1개당 10크레딧 + 카테고리 기본 점수
+// 크레딧 적립 규칙(임시): 수량 1개당 10크레딧 + 큰 카테고리 기본 점수
+// (여러 큰 카테고리를 골랐으면 그중 가장 높은 기본 점수)
 const CATEGORY_BASE_CREDIT = {
   의류: 20,
   가구: 50,
@@ -69,14 +74,27 @@ export function nameSimilarity(a, b) {
   return Math.max(bigramDice(na, nb), tokenSimilarity(tokenize(a), tokenize(b)))
 }
 
+/**
+ * 카테고리 일치도 (0~1). 양쪽이 고른 세부 카테고리 각각에 대해 상대편에서 가장 잘 맞는 것을 찾아
+ * (같은 세부 카테고리 1, 같은 큰 카테고리 0.5, 그 외 0) 전부 평균 낸다.
+ * 많이 겹칠수록 높고, 관계없는 카테고리를 잔뜩 고르면 평균이 내려간다.
+ */
+export function categorySimilarity(a, b) {
+  if (a.length === 0 || b.length === 0) return 0
+  const best = (leaf, others) =>
+    Math.max(...others.map((o) => (o === leaf ? 1 : parentOf(o) === parentOf(leaf) ? SAME_PARENT_SCORE : 0)))
+  const total = a.reduce((sum, leaf) => sum + best(leaf, b), 0) + b.reduce((sum, leaf) => sum + best(leaf, a), 0)
+  return total / (a.length + b.length)
+}
+
 /** 수량 충족률 (0~1): 필요 수량 이상이면 1, 모자라면 비율만큼 감점 */
 export function quantityFulfillment(supply, need) {
   if (need <= 0) return 1
   return Math.min(1, Math.max(0, supply) / need)
 }
 
-function scoreMatch({ category, title, supplyQty, needQty, condition, target }) {
-  const categoryScore = category === target.category ? 1 : 0
+function scoreMatch({ categories, title, supplyQty, needQty, condition, target }) {
+  const categoryScore = categorySimilarity(categories, target.categories)
   const nameScore = nameSimilarity(title, target.title)
   if (categoryScore === 0 && nameScore < NAME_GATE) return null
 
@@ -104,14 +122,15 @@ function rank(list) {
  * 전체 후보를 반환하고, 상위 N개만 보여주는 건 화면(MatchList)에서 처리한다.
  * TODO(6~7차시): institutionNeeds를 Supabase 조회 결과로 교체
  */
-export function matchDonorToInstitutions({ category, title, quantity, condition }) {
+export function matchDonorToInstitutions({ categories, title, quantity, condition }) {
   const qty = Number(quantity) || 0
   const matches = rank(
     institutionNeeds.map((need) =>
-      scoreMatch({ category, title, supplyQty: qty, needQty: need.quantity, condition, target: need }),
+      scoreMatch({ categories, title, supplyQty: qty, needQty: need.quantity, condition, target: need }),
     ),
   )
-  const estimatedCredit = (CATEGORY_BASE_CREDIT[category] ?? 10) + qty * 10
+  const base = parentsOf(categories).reduce((max, p) => Math.max(max, CATEGORY_BASE_CREDIT[p] ?? 10), 10)
+  const estimatedCredit = base + qty * 10
   return { matches, estimatedCredit }
 }
 
@@ -119,12 +138,12 @@ export function matchDonorToInstitutions({ category, title, quantity, condition 
  * 기관 입력값을 기부 등록 목록과 대조해 점수 순으로 돌려준다.
  * TODO(6~7차시): donorItems를 Supabase 조회 결과로 교체
  */
-export function matchInstitutionToDonors({ category, title, quantity }) {
+export function matchInstitutionToDonors({ categories, title, quantity }) {
   const need = Number(quantity) || 0
   const matches = rank(
     donorItems.map((item) =>
       scoreMatch({
-        category,
+        categories,
         title,
         supplyQty: item.quantity,
         needQty: need,

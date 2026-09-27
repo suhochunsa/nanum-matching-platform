@@ -35,6 +35,7 @@ npm run dev
 ```
 src/
   components/   Layout(공통 헤더/푸터), ItemCard(목록 카드), MatchList(매칭 결과·더보기)
-  data/         mockData.js — 더미 데이터, matching.js — 매칭 점수 계산
+  data/         mockData.js — 더미 데이터, matching.js — 매칭 점수 계산,
+                categories.js — 범주 트리, validation.js — 입력값 검사
   pages/        HomePage, LoginPage, DonorPage, InstitutionPage
 ```

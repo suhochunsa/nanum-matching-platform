@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import CategoryTree from '../components/CategoryTree.jsx'
 import FormField from '../components/FormField.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
 import { fieldClass } from '../components/formStyles.js'
-import { CATEGORIES, CONDITIONS } from '../data/mockData.js'
+import { formatCategory } from '../data/categories.js'
+import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
 import { MAX_DETAIL_LENGTH, MAX_PHOTO_MB, validateDonor } from '../data/validation.js'
 
@@ -13,7 +15,7 @@ const INITIAL_VALUES = {
   donorPhone: '',
   photo: null,
   title: '',
-  category: CATEGORIES[0],
+  categories: [],
   condition: CONDITIONS[0],
   quantity: '1',
   detail: '',
@@ -148,19 +150,19 @@ export default function DonorPage() {
               />
             </FormField>
 
-            <FormField id="category" label="물품의 범주 입력" required>
-              <select
-                id="category"
-                value={values.category}
-                onChange={update('category')}
-                className={fieldClass()}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+            <FormField
+              id="categories"
+              label="물품의 범주 입력"
+              required
+              hint="여러 개 선택할 수 있어요. 큰 범주를 눌러 세부 범주를 펼치세요."
+              error={errors.categories}
+            >
+              <CategoryTree
+                id="categories"
+                value={values.categories}
+                onChange={(categories) => setValues((v) => ({ ...v, categories }))}
+                error={errors.categories}
+              />
             </FormField>
 
             <div className="grid grid-cols-2 gap-3">
@@ -235,7 +237,11 @@ export default function DonorPage() {
                     ['기부자', `${result.submitted.donorName} · ${result.submitted.donorPhone}`],
                     [
                       '물품',
-                      `${result.submitted.title} (${result.submitted.category} · ${result.submitted.condition} · ${result.submitted.quantity}개)`,
+                      `${result.submitted.title} (${result.submitted.condition} · ${result.submitted.quantity}개)`,
+                    ],
+                    [
+                      '범주',
+                      result.submitted.categories.map(formatCategory).join(', '),
                     ],
                     ['사진', result.submitted.photo ? result.submitted.photo.name : '없음'],
                     ['상세 정보', result.submitted.detail || '없음'],
@@ -257,7 +263,7 @@ export default function DonorPage() {
                       key={result.id}
                       matches={result.matches}
                       primary={(m) => `${m.org} · ${m.title}`}
-                      secondary={(m) => `${m.category} · 필요 수량 ${m.quantity}`}
+                      secondary={(m) => `${m.categories.map(formatCategory).join(', ')} · 필요 수량 ${m.quantity}`}
                     />
                   </div>
                 ) : (

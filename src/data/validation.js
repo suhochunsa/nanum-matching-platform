@@ -33,6 +33,10 @@ function checkPhone(value) {
   if (!PHONE_RE.test(text)) return '연락처 형식이 올바르지 않아요. (예: 010-1234-5678)'
 }
 
+function checkCategories(categories) {
+  if (categories.length === 0) return '범주를 하나 이상 선택해 주세요.'
+}
+
 function checkPhoto(file) {
   if (!file) return
   if (!file.type.startsWith('image/')) return '이미지 파일만 올릴 수 있어요.'
@@ -50,6 +54,7 @@ export function validateDonor(v) {
     donorPhone: checkPhone(v.donorPhone),
     photo: checkPhoto(v.photo),
     title: checkText(v.title, '물품 이름', { min: 2, max: 40 }),
+    categories: checkCategories(v.categories),
     quantity: checkQuantity(v.quantity),
     detail:
       v.detail.length > MAX_DETAIL_LENGTH
@@ -62,6 +67,7 @@ export function validateDonor(v) {
 export function validateInstitution(v) {
   return compact({
     title: checkText(v.title, '필요 물품 이름', { min: 2, max: 40 }),
+    categories: checkCategories(v.categories),
     quantity: checkQuantity(v.quantity),
     orgName: checkText(v.orgName, '기관명', { min: 2, max: 30 }),
     orgLocation: checkText(v.orgLocation, '위치', { min: 2, max: 60 }),

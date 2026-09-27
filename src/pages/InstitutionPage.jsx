@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import CategoryTree from '../components/CategoryTree.jsx'
 import FormField from '../components/FormField.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
 import { fieldClass } from '../components/formStyles.js'
-import { CATEGORIES } from '../data/mockData.js'
+import { formatCategory } from '../data/categories.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
 import { validateInstitution } from '../data/validation.js'
 
@@ -13,7 +14,7 @@ const INITIAL_VALUES = {
   orgLocation: '',
   orgPhone: '',
   title: '',
-  category: CATEGORIES[0],
+  categories: [],
   quantity: '1',
 }
 
@@ -80,19 +81,19 @@ export default function InstitutionPage() {
               />
             </FormField>
 
-            <FormField id="category" label="필요 물품 범주 입력" required>
-              <select
-                id="category"
-                value={values.category}
-                onChange={update('category')}
-                className={fieldClass()}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+            <FormField
+              id="categories"
+              label="필요 물품 범주 입력"
+              required
+              hint="여러 개 선택할 수 있어요. 큰 범주를 눌러 세부 범주를 펼치세요."
+              error={errors.categories}
+            >
+              <CategoryTree
+                id="categories"
+                value={values.categories}
+                onChange={(categories) => setValues((v) => ({ ...v, categories }))}
+                error={errors.categories}
+              />
             </FormField>
 
             <FormField id="quantity" label="필요 물품 수량 입력" required error={errors.quantity}>
@@ -177,7 +178,11 @@ export default function InstitutionPage() {
                   rows={[
                     [
                       '필요 물품',
-                      `${result.submitted.title} (${result.submitted.category} · ${result.submitted.quantity}개)`,
+                      `${result.submitted.title} (${result.submitted.quantity}개)`,
+                    ],
+                    [
+                      '범주',
+                      result.submitted.categories.map(formatCategory).join(', '),
                     ],
                     ['기관', `${result.submitted.orgName} · ${result.submitted.orgPhone}`],
                     ['위치', result.submitted.orgLocation],
@@ -194,7 +199,9 @@ export default function InstitutionPage() {
                       key={result.id}
                       matches={result.matches}
                       primary={(m) => m.title}
-                      secondary={(m) => `${m.category} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition}`}
+                      secondary={(m) =>
+                        `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition}`
+                      }
                     />
                   </div>
                 ) : (

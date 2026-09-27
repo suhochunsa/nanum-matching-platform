@@ -50,7 +50,7 @@ export default function HomePage() {
             {donorItems.map((item) => (
               <ItemCard
                 key={item.id}
-                category={item.category}
+                categories={item.categories}
                 title={item.title}
                 quantity={item.quantity}
                 sub={item.condition}
@@ -72,7 +72,7 @@ export default function HomePage() {
             {institutionNeeds.map((need) => (
               <ItemCard
                 key={need.id}
-                category={need.category}
+                categories={need.categories}
                 title={need.title}
                 quantity={need.quantity}
                 sub={need.org}
