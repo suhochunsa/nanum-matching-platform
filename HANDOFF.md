@@ -38,11 +38,19 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 |---|---|---|
 | `/` | `src/pages/HomePage.jsx` | 서비스 소개, 기부자/기관 진입 버튼, 기부 등록 물품·기관 필요 물품 카드 목록 |
 | `/login` | `src/pages/LoginPage.jsx` | 개인(기부자)/기관 토글, 아이디·비밀번호 (제출 시 선택한 유형 화면으로 이동만 함) |
-| `/donor` | `src/pages/DonorPage.jsx` | 사진 업로드, 범주·수량·상태 입력 → 매칭 결과·예상 크레딧 표시 |
-| `/institution` | `src/pages/InstitutionPage.jsx` | 필요 범주·수량·기관 정보 입력 → DB 내 일치 결과 표시 |
+| `/donor` | `src/pages/DonorPage.jsx` | 기부자 정보(이름·연락처) + 물품 정보(사진·이름·범주·수량·상태·상세 정보) 입력 → 입력값 요약·매칭 결과·예상 크레딧 표시 |
+| `/institution` | `src/pages/InstitutionPage.jsx` | 필요 물품(이름·범주·수량) + 기관 정보(기관명·위치·연락처) 입력 → 입력값 요약·DB 내 일치 결과 표시 |
 
 공통 레이아웃은 `src/components/Layout.jsx`(헤더/푸터), 카드 UI는
-`src/components/ItemCard.jsx`.
+`src/components/ItemCard.jsx`. 폼 공통 부품은 `FormField.jsx`(라벨·오류 표시),
+`formStyles.js`(입력칸 스타일), `InputSummary.jsx`(제출값 요약 카드).
+
+입력값 검사는 `src/data/validation.js` (3차시 "입력값 확인"):
+- 필수: 이름·연락처·물품 이름·수량 (기관은 기관명·위치·연락처·필요 물품 이름·수량)
+- 연락처: 휴대폰/일반 전화 형식, 수량: 1~999 정수, 상세 정보: 300자 이하
+- 사진: 선택, 이미지 파일만, 5MB 이하 (선택하면 미리보기 표시)
+- 첫 제출 시도 이후부터 입력할 때마다 재검사, 제출 시 첫 오류 칸으로 포커스
+- 요청일·등록일은 입력받지 않고 제출 시점 날짜로 자동 기록
 
 ## 지금은 가짜(mock)인 부분 — 다음 단계에서 교체할 곳
 
@@ -53,7 +61,8 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
   4차시에 고도화 완료, 데이터 소스만 mock이라 Supabase 조회로 교체 필요
 - 크레딧 계산(`CATEGORY_BASE_CREDIT`): 임시 값. 실제 정책 정하면 교체
 - 로그인: 실제 인증 없음, 그냥 화면 전환만 함 (Supabase Auth 연동 필요)
-- 이미지 업로드: 파일 선택 UI만 있고 실제 업로드/저장은 안 됨
+- 이미지 업로드: 선택·미리보기·검사까지만, 실제 업로드/저장은 안 됨 (Supabase Storage 필요)
+- 폼 입력값: 검사 후 화면에만 표시, 저장 안 됨 (각 페이지 `handleSubmit`의 TODO)
 
 ## 매칭 점수 규칙 (4차시, `src/data/matching.js`)
 
@@ -72,7 +81,7 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)
 - [x] 2차시: 메인 화면 뼈대 (완료 — HomePage)
-- [x] 3차시: 기부자·기관 입력 폼 (완료 — DonorPage/InstitutionPage)
+- [x] 3차시: 기부자·기관 입력 폼 + 입력값 확인 (완료 — 계획서 입력 항목 전부 반영, validation.js)
 - [x] 4차시: 매칭 처리 로직 고도화 — 완료 (`src/data/matching.js`, 아래 "매칭 점수 규칙" 참고)
 - [x] 5차시: 결과 화면 (완료, mock 기반) — **Vercel 첫 배포는 아직**
 - [ ] 6차시: Supabase 프로젝트 생성 및 연결
