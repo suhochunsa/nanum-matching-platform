@@ -24,8 +24,8 @@ npm run dev
 `src/data/mockData.js`에 있는 더미 데이터로 화면이 동작합니다. 실제 매칭 로직과
 저장은 아직 없고, 계획서의 개발 순서를 그대로 따라갈 수 있게 표시해뒀어요.
 
-- 4차시: `matchDonorToInstitutions` / `matchInstitutionToDonors`의 카테고리 일치
-  규칙을 수량·상태까지 반영하도록 다듬기
+- 4차시(완료): `src/data/matching.js`에서 카테고리·이름 유사도·수량·상태를 합산한
+  점수로 순위를 매김 (자세한 규칙은 HANDOFF.md)
 - 6~7차시: Supabase 프로젝트를 연결하고, `mockData.js`의 더미 배열을 실제
   테이블 조회/저장으로 교체 (폼의 `TODO` 주석에 표시해뒀어요)
 - 8차시: 매칭 결과·크레딧 누적을 실제 데이터 기반으로 반영
@@ -34,7 +34,7 @@ npm run dev
 
 ```
 src/
-  components/   Layout(공통 헤더/푸터), ItemCard(목록 카드)
-  data/         mockData.js — 더미 데이터 + 임시 매칭 함수
+  components/   Layout(공통 헤더/푸터), ItemCard(목록 카드), MatchList(매칭 결과·더보기)
+  data/         mockData.js — 더미 데이터, matching.js — 매칭 점수 계산
   pages/        HomePage, LoginPage, DonorPage, InstitutionPage
 ```

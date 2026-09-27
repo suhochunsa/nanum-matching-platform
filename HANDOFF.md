@@ -49,18 +49,31 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 `src/data/mockData.js`에 전부 모여 있고, 각 폼 컴포넌트 안에 `TODO` 주석으로 표시해둠.
 
 - `donorItems`, `institutionNeeds`: 실제로는 Supabase 테이블에서 조회해야 함
-- `matchDonorToInstitutions`, `matchInstitutionToDonors`: 지금은 "카테고리 일치"만
-  보는 단순 규칙. 계획서 4차시 목표대로 수량·상태 조건과 유사도 계산을 추가해야 함
+- `matchDonorToInstitutions`, `matchInstitutionToDonors`(`src/data/matching.js`): 로직은
+  4차시에 고도화 완료, 데이터 소스만 mock이라 Supabase 조회로 교체 필요
 - 크레딧 계산(`CATEGORY_BASE_CREDIT`): 임시 값. 실제 정책 정하면 교체
 - 로그인: 실제 인증 없음, 그냥 화면 전환만 함 (Supabase Auth 연동 필요)
 - 이미지 업로드: 파일 선택 UI만 있고 실제 업로드/저장은 안 됨
+
+## 매칭 점수 규칙 (4차시, `src/data/matching.js`)
+
+점수(0~100) = 카테고리 35% + 이름 유사도 30% + 수량 충족률 20% + 상태 15%
+
+- 카테고리: 같으면 1, 다르면 0. 다르더라도 이름 유사도가 0.25 이상이면 후보에 포함
+  (둘 다 아니면 결과에서 제외)
+- 이름 유사도: 글자 2개 단위 Dice 계수와 단어 단위 일치(포함 관계 포함) 중 큰 값
+- 수량 충족률: 공급 수량 ≥ 필요 수량이면 1, 모자라면 공급/필요 비율
+- 상태: 새 상품 1 / 사용감 적음 0.7 / 사용감 있음 0.4 (기부 물품의 상태 기준)
+- 결과는 점수 내림차순, 화면(`MatchList`)에서 상위 10개 + "더보기"(10개씩)
+- 크레딧 계산은 아직 임시 규칙 그대로 (상태 미반영)
+- 한계: "패딩" ↔ "외투"처럼 글자가 다른 동의어는 못 잡음 (동의어 사전 필요)
 
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)
 - [x] 2차시: 메인 화면 뼈대 (완료 — HomePage)
 - [x] 3차시: 기부자·기관 입력 폼 (완료 — DonorPage/InstitutionPage)
-- [ ] 4차시: 매칭 처리 로직 고도화 (수량·상태 조건, 유사도 계산)
+- [x] 4차시: 매칭 처리 로직 고도화 — 완료 (`src/data/matching.js`, 아래 "매칭 점수 규칙" 참고)
 - [x] 5차시: 결과 화면 (완료, mock 기반) — **Vercel 첫 배포는 아직**
 - [ ] 6차시: Supabase 프로젝트 생성 및 연결
 - [ ] 7차시: 기부자·기관·물품 정보 저장 기능
@@ -75,5 +88,7 @@ npm run dev
 
 ## 참고
 
+- `node_modules`는 OS별 네이티브 바인딩이 달라서 Cowork(리눅스)에서 설치한 걸 맥에서 못 씀.
+  빌드 에러가 나면 `rm -rf node_modules && npm install`
 - 프론트엔드 코드 위치: `~/Dev/정보과학 프로젝트 앱`
 - 계획서·발표자료·탐구일지 원본: `~/Desktop/정보과학 프로젝트`

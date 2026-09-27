@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CATEGORIES, CONDITIONS, matchDonorToInstitutions } from '../data/mockData.js'
+import MatchList from '../components/MatchList.jsx'
+import { CATEGORIES, CONDITIONS } from '../data/mockData.js'
+import { matchDonorToInstitutions } from '../data/matching.js'
 
 export default function DonorPage() {
+  const [title, setTitle] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
   const [quantity, setQuantity] = useState(1)
   const [condition, setCondition] = useState(CONDITIONS[0])
@@ -11,9 +14,12 @@ export default function DonorPage() {
 
   function handleSubmit(e) {
     e.preventDefault()
-    // TODO(4차시): 카테고리 일치 → 수량·상태 조건까지 반영하는 정교한 매칭 로직으로 교체
     // TODO(6~7차시): Supabase에 기부 물품 정보 저장
-    setResult(matchDonorToInstitutions({ category, quantity }))
+    setResult({
+      id: Date.now(),
+      category,
+      ...matchDonorToInstitutions({ category, title, quantity, condition }),
+    })
   }
 
   return (
@@ -43,6 +49,18 @@ export default function DonorPage() {
                 onChange={(e) => setFileName(e.target.files?.[0]?.name ?? '')}
               />
             </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-black/70 mb-1">물품 이름 입력</label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="예: 아디다스 겨울 패딩"
+              className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+            />
           </div>
 
           <div>
@@ -117,23 +135,18 @@ export default function DonorPage() {
                 {result.matches.length > 0 ? (
                   <div>
                     <p className="text-sm text-brand-100 mb-2">
-                      "{category}" 물품을 찾고 있는 기관 {result.matches.length}곳
+                      이 물품과 잘 맞는 기관 필요 물품 {result.matches.length}건 (점수 높은 순)
                     </p>
-                    <ul className="space-y-2">
-                      {result.matches.map((m) => (
-                        <li
-                          key={m.id}
-                          className="rounded-lg bg-white/10 px-3 py-2 text-sm flex items-center justify-between"
-                        >
-                          <span>{m.org}</span>
-                          <span className="text-brand-100">필요 수량 {m.quantity}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <MatchList
+                      key={result.id}
+                      matches={result.matches}
+                      primary={(m) => `${m.org} · ${m.title}`}
+                      secondary={(m) => `${m.category} · 필요 수량 ${m.quantity}`}
+                    />
                   </div>
                 ) : (
                   <p className="text-sm text-brand-100">
-                    아직 이 물품을 필요로 하는 기관이 없어요. 아래 버튼으로 데이터베이스에
+                    비슷한 물품을 필요로 하는 기관이 아직 없어요. 아래 버튼으로 데이터베이스에
                     등록해두면 나중에 필요한 기관과 자동으로 연결돼요.
                   </p>
                 )}
