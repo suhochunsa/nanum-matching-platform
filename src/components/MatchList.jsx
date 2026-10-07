@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PhotoThumb from './PhotoThumb.jsx'
 
 const PAGE_SIZE = 10
 
@@ -13,8 +14,9 @@ const SCORE_CHIPS = [
  * 나머지는 "더보기" 버튼을 누를 때마다 10개씩 펼친다.
  * 새 검색마다 부모에서 key를 바꿔 펼침 상태를 초기화한다.
  * renderDetail을 주면 항목마다 detailLabel 버튼이 생기고, 누르면 그 내용(기부·수령 방법)을 펼친다.
+ * photo를 주면 항목 왼쪽에 물품 사진 썸네일을 보여준다. (기관 화면의 기부 물품 목록)
  */
-export default function MatchList({ matches, primary, secondary, detailLabel, renderDetail }) {
+export default function MatchList({ matches, primary, secondary, detailLabel, renderDetail, photo }) {
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [openIds, setOpenIds] = useState(() => new Set())
   const remaining = matches.length - visible
@@ -35,8 +37,9 @@ export default function MatchList({ matches, primary, secondary, detailLabel, re
           const isOpen = openIds.has(m.id)
           return (
             <li key={m.id} className="rounded-lg bg-white/10 px-3 py-2.5 text-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+              <div className="flex items-start gap-3">
+                {photo && <PhotoThumb src={photo(m)} alt={primary(m)} tone="dark" />}
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">
                     <span className="mr-2 text-brand-200">{i + 1}</span>
                     {primary(m)}

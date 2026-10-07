@@ -270,6 +270,7 @@ export default function InstitutionPage() {
                       secondary={(m) =>
                         `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition}`
                       }
+                      photo={(m) => m.photo}
                       detailLabel="수령 방법 보기"
                       renderDetail={(m) => (
                         <GuideBox

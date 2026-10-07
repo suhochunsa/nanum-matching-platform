@@ -50,7 +50,7 @@ export default function HomePage() {
               더 보기
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2 gap-3">
             {donorItems.map((item) => (
               <ItemCard
                 key={item.id}
@@ -60,6 +60,8 @@ export default function HomePage() {
                 sub={item.condition}
                 subLabel=""
                 tone="brand"
+                showPhoto
+                photo={item.photo}
               />
             ))}
           </div>
@@ -72,7 +74,7 @@ export default function HomePage() {
               더 보기
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2 gap-3">
             {institutionNeeds.map((need) => (
               <ItemCard
                 key={need.id}

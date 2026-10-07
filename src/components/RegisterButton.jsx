@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 
 /**
  * 결과 화면 아래 "데이터베이스에 등록하기" 버튼.
- * status: 'idle'(아직 매칭 확인 전) | 'ready' | 'done' | 'error'
+ * status: 'idle'(아직 매칭 확인 전) | 'ready' | 'saving'(사진 줄이는 중 등) | 'done' | 'error'
  */
-export default function RegisterButton({ status, onRegister, readyHint, doneMessage }) {
+export default function RegisterButton({ status, onRegister, readyHint, doneMessage, errorMessage }) {
   return (
     <div className="space-y-2">
       <button
@@ -13,7 +13,7 @@ export default function RegisterButton({ status, onRegister, readyHint, doneMess
         disabled={status !== 'ready'}
         className="w-full rounded-xl bg-brand-100 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-200 transition-colors disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand-100"
       >
-        {status === 'done' ? '등록 완료 ✓' : '데이터베이스에 등록하기'}
+        {status === 'done' ? '등록 완료 ✓' : status === 'saving' ? '등록하는 중…' : '데이터베이스에 등록하기'}
       </button>
 
       {status === 'idle' && (
@@ -30,7 +30,8 @@ export default function RegisterButton({ status, onRegister, readyHint, doneMess
       )}
       {status === 'error' && (
         <p className="text-center text-xs text-red-600">
-          저장하지 못했어요. 브라우저의 사이트 데이터 저장이 막혀 있는지 확인해 주세요.
+          {errorMessage ||
+            '저장하지 못했어요. 브라우저 저장 공간이 가득 찼거나 사이트 데이터 저장이 막혀 있을 수 있어요.'}
         </p>
       )}
     </div>

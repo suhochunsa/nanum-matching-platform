@@ -10,6 +10,7 @@ import RegisterButton from '../components/RegisterButton.jsx'
 import { fieldClass } from '../components/formStyles.js'
 import { formatCategory } from '../data/categories.js'
 import { donationGuide, methodLabel } from '../data/delivery.js'
+import { compressImage } from '../data/image.js'
 import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
 import { addDonorItem } from '../data/store.js'
@@ -39,6 +40,7 @@ export default function DonorPage() {
   const [preview, setPreview] = useState('')
   const [result, setResult] = useState(null)
   const [registerStatus, setRegisterStatus] = useState('idle')
+  const [registerError, setRegisterError] = useState('')
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
   const errors = submitted ? validateDonor(values) : {}
@@ -82,9 +84,24 @@ export default function DonorPage() {
   }
 
   // 매칭 확인 때 제출한 값(result.submitted)을 그대로 등록한다.
+  // 사진은 작게 줄여서 함께 저장해 홈 화면과 기관 검색 결과에 보여준다.
   // TODO(6~7차시): Supabase에 기부자·기부 물품 정보 저장 (사진은 Storage에 업로드)
-  function handleRegister() {
+  async function handleRegister() {
     const s = result.submitted
+    setRegisterStatus('saving')
+    setRegisterError('')
+
+    let photo = ''
+    if (s.photo) {
+      try {
+        photo = await compressImage(s.photo)
+      } catch {
+        setRegisterError('사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 매칭을 확인해 주세요.')
+        setRegisterStatus('error')
+        return
+      }
+    }
+
     const saved = addDonorItem({
       categories: s.categories,
       title: s.title,
@@ -94,7 +111,7 @@ export default function DonorPage() {
       region: s.region,
       methods: s.methods,
       detail: s.detail,
-      photoName: s.photo?.name ?? '',
+      photo,
       registeredAt: s.registeredAt,
     })
     setRegisterStatus(saved ? 'done' : 'error')
@@ -365,6 +382,7 @@ export default function DonorPage() {
             onRegister={handleRegister}
             readyHint="등록하면 기관이 필요 물품을 찾을 때 이 물품이 검색 결과에 나와요."
             doneMessage="기부 물품을 등록했어요."
+            errorMessage={registerError}
           />
         </div>
       </div>

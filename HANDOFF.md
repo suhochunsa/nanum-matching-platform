@@ -64,7 +64,10 @@ DB 등록 (`src/data/store.js`, 임시):
 - mock 데이터 + 이 브라우저 localStorage(`nanum-mock-db-v1`)에 추가한 항목을 합쳐서 돌려줌
 - 등록한 항목은 홈 목록 맨 앞과 상대편 매칭 결과에 바로 나타남
 - 다른 브라우저·기기에서는 안 보임. 7차시에 store.js의 함수만 Supabase로 바꾸면 됨
-- 기부자 연락처와 사진 파일은 저장 안 함 (사진은 파일명만)
+- 기부자 연락처는 저장 안 함
+- 사진: 등록할 때 `src/data/image.js`로 긴 변 640px JPG(보통 50~150KB)로 줄여 data URL로 저장.
+  홈 카드와 기관 매칭 결과에 썸네일로 보이고, 누르면 크게 보임(`PhotoThumb.jsx`).
+  localStorage 용량(약 5MB) 때문에 사진 30~50장 정도가 한계 → 7차시에 Supabase Storage로 옮길 것
 
 범주는 2단 트리(`src/data/categories.js`의 `CATEGORY_TREE`, 큰 범주 → 세부 범주)이고
 여러 개를 고를 수 있음. 값은 `'의류/아우터'` 같은 문자열 배열(`categories`)로 다룸.
@@ -87,7 +90,7 @@ DB 등록 (`src/data/store.js`, 임시):
   4차시에 고도화 완료, 데이터 소스만 mock이라 Supabase 조회로 교체 필요
 - 크레딧 계산(`CATEGORY_BASE_CREDIT`): 임시 값. 실제 정책 정하면 교체
 - 로그인: 실제 인증 없음, 그냥 화면 전환만 함 (Supabase Auth 연동 필요)
-- 이미지 업로드: 선택·미리보기·검사까지만, 실제 업로드/저장은 안 됨 (Supabase Storage 필요)
+- 이미지 업로드: 줄인 사진을 localStorage에 임시 저장 (Supabase Storage로 교체 필요)
 - 폼 입력값 저장: localStorage 임시 저장만 됨 (각 페이지 `handleRegister`의 TODO, `store.js`)
 
 ## 매칭 점수 규칙 (4차시, `src/data/matching.js`)
