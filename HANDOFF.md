@@ -30,6 +30,10 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 - Tailwind CSS v4 (`@tailwindcss/vite` 플러그인, `src/index.css`의 `@theme`에 브랜드 색상 정의)
 - 색상: 어두운 청록색 계열(`brand-*`, UI 스케치의 남색 박스 색감 참고) + 주황색 강조색(`accent-*`)
 - GitHub 저장소: https://github.com/suhochunsa/nanum-matching-platform (private, `main` 브랜치)
+- 배포: https://nanum-matching-platform.vercel.app (Vercel Hobby, 프로젝트명 nanum-matching-platform)
+  - `vercel.json`의 rewrites로 `/donor` 등을 새로고침해도 index.html로 연결됨
+  - 현재는 CLI로 배포 (`vercel deploy --prod`). GitHub 자동 배포는 Vercel GitHub 앱에
+    이 비공개 저장소 접근 권한을 준 뒤 `vercel git connect`로 연결해야 함
 - 아직 Supabase 연동 없음 — 전부 `src/data/mockData.js`의 더미 데이터로 동작
 
 ## 화면 구성 (구현 완료, mock 데이터 기반)
@@ -107,7 +111,7 @@ DB 등록 (`src/data/store.js`, 임시):
 - [x] 2차시: 메인 화면 뼈대 (완료 — HomePage)
 - [x] 3차시: 기부자·기관 입력 폼 + 입력값 확인 (완료 — 계획서 입력 항목 전부 반영, validation.js)
 - [x] 4차시: 매칭 처리 로직 고도화 — 완료 (`src/data/matching.js`, 아래 "매칭 점수 규칙" 참고)
-- [x] 5차시: 결과 화면 — 기부 방법·수령 방법·DB 등록 버튼 완료 (mock + localStorage) — **Vercel 첫 배포는 아직**
+- [x] 5차시: 결과 화면 — 기부 방법·수령 방법·DB 등록 버튼 완료 (mock + localStorage), Vercel 첫 배포 완료
 - [ ] 6차시: Supabase 프로젝트 생성 및 연결
 - [ ] 7차시: 기부자·기관·물품 정보 저장 기능
 - [ ] 8차시: 저장 데이터 기반 매칭·크레딧 반영
