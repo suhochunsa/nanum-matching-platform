@@ -1,5 +1,5 @@
 import { parentOf, parentsOf } from './categories.js'
-import { donorItems, institutionNeeds } from './mockData.js'
+import { findInstitution, getDonorItems, getInstitutionNeeds } from './store.js'
 
 // 매칭 점수 = 아래 네 항목(각 0~1)을 가중합한 값(0~100점).
 export const WEIGHTS = { category: 0.35, name: 0.3, quantity: 0.2, condition: 0.15 }
@@ -120,13 +120,20 @@ function rank(list) {
 /**
  * 기부자 입력값을 기관 필요 목록과 대조해 점수 순으로 돌려준다.
  * 전체 후보를 반환하고, 상위 N개만 보여주는 건 화면(MatchList)에서 처리한다.
- * TODO(6~7차시): institutionNeeds를 Supabase 조회 결과로 교체
+ * 각 결과에는 기부 방법 안내용 기관 정보(institution)를 붙인다.
  */
 export function matchDonorToInstitutions({ categories, title, quantity, condition }) {
   const qty = Number(quantity) || 0
   const matches = rank(
-    institutionNeeds.map((need) =>
-      scoreMatch({ categories, title, supplyQty: qty, needQty: need.quantity, condition, target: need }),
+    getInstitutionNeeds().map((need) =>
+      scoreMatch({
+        categories,
+        title,
+        supplyQty: qty,
+        needQty: need.quantity,
+        condition,
+        target: { ...need, institution: findInstitution(need.org) },
+      }),
     ),
   )
   const base = parentsOf(categories).reduce((max, p) => Math.max(max, CATEGORY_BASE_CREDIT[p] ?? 10), 10)
@@ -136,12 +143,11 @@ export function matchDonorToInstitutions({ categories, title, quantity, conditio
 
 /**
  * 기관 입력값을 기부 등록 목록과 대조해 점수 순으로 돌려준다.
- * TODO(6~7차시): donorItems를 Supabase 조회 결과로 교체
  */
 export function matchInstitutionToDonors({ categories, title, quantity }) {
   const need = Number(quantity) || 0
   const matches = rank(
-    donorItems.map((item) =>
+    getDonorItems().map((item) =>
       scoreMatch({
         categories,
         title,

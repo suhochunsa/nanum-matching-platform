@@ -2,17 +2,24 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
 import FormField from '../components/FormField.jsx'
+import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
+import MethodPicker from '../components/MethodPicker.jsx'
+import RegisterButton from '../components/RegisterButton.jsx'
 import { fieldClass } from '../components/formStyles.js'
 import { formatCategory } from '../data/categories.js'
+import { methodLabel, receiveGuide } from '../data/delivery.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
+import { addInstitutionNeed } from '../data/store.js'
 import { validateInstitution } from '../data/validation.js'
 
 const INITIAL_VALUES = {
   orgName: '',
   orgLocation: '',
   orgPhone: '',
+  hours: '',
+  methods: [],
   title: '',
   categories: [],
   quantity: '1',
@@ -22,6 +29,7 @@ export default function InstitutionPage() {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState(null)
+  const [registerStatus, setRegisterStatus] = useState('idle')
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
   const errors = submitted ? validateInstitution(values) : {}
@@ -41,7 +49,6 @@ export default function InstitutionPage() {
       return
     }
 
-    // TODO(6~7차시): Supabase에 기관·필요 물품 정보 저장
     setResult({
       id: Date.now(),
       submitted: {
@@ -49,8 +56,32 @@ export default function InstitutionPage() {
         title: values.title.trim(),
         requestedAt: new Date().toLocaleDateString('ko-KR'),
       },
+      institution: {
+        name: values.orgName.trim(),
+        location: values.orgLocation.trim(),
+        phone: values.orgPhone.trim(),
+        hours: values.hours.trim(),
+        methods: values.methods,
+      },
       ...matchInstitutionToDonors(values),
     })
+    setRegisterStatus('ready')
+  }
+
+  // 매칭 확인 때 제출한 값을 그대로 등록한다.
+  // TODO(6~7차시): Supabase에 기관·필요 물품 정보 저장
+  function handleRegister() {
+    const s = result.submitted
+    const saved = addInstitutionNeed(
+      {
+        categories: s.categories,
+        title: s.title,
+        quantity: Number(s.quantity),
+        requestedAt: s.requestedAt,
+      },
+      result.institution,
+    )
+    setRegisterStatus(saved ? 'done' : 'error')
   }
 
   return (
@@ -151,6 +182,41 @@ export default function InstitutionPage() {
                 className={fieldClass(errors.orgPhone)}
               />
             </FormField>
+
+            <FormField
+              id="hours"
+              label="방문 가능 시간"
+              hint="선택 · 기부자가 직접 가져올 때 안내돼요."
+              error={errors.hours}
+            >
+              <input
+                id="hours"
+                type="text"
+                value={values.hours}
+                onChange={update('hours')}
+                placeholder="예: 평일 10:00~17:00"
+                className={fieldClass(errors.hours)}
+              />
+            </FormField>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-3 font-semibold text-brand-800">수령 방법</legend>
+            <FormField
+              id="methods"
+              label="받을 수 있는 방법"
+              required
+              hint="여러 개 선택할 수 있어요. 기부자가 가능한 방법과 맞춰 수령 방법을 안내해요."
+              error={errors.methods}
+            >
+              <MethodPicker
+                id="methods"
+                audience="org"
+                value={values.methods}
+                onChange={(methods) => setValues((v) => ({ ...v, methods }))}
+                error={errors.methods}
+              />
+            </FormField>
           </fieldset>
 
           <button
@@ -186,6 +252,8 @@ export default function InstitutionPage() {
                     ],
                     ['기관', `${result.submitted.orgName} · ${result.submitted.orgPhone}`],
                     ['위치', result.submitted.orgLocation],
+                    ['방문 가능 시간', result.institution.hours || '입력 안 함'],
+                    ['받을 수 있는 방법', result.institution.methods.map(methodLabel).join(', ')],
                     ['요청일', result.submitted.requestedAt],
                   ]}
                 />
@@ -202,6 +270,16 @@ export default function InstitutionPage() {
                       secondary={(m) =>
                         `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition}`
                       }
+                      detailLabel="수령 방법 보기"
+                      renderDetail={(m) => (
+                        <GuideBox
+                          guide={receiveGuide(m, result.institution)}
+                          fallback={`기부자가 가능한 방법(${m.methods
+                            .map(methodLabel)
+                            .join(', ')})과 받을 수 있는 방법이 겹치지 않아요.`}
+                          note="기부자 연락처는 매칭이 확정되면 공개돼요."
+                        />
+                      )}
                     />
                   </div>
                 ) : (
@@ -214,14 +292,12 @@ export default function InstitutionPage() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="rounded-xl bg-brand-100 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-200 transition-colors"
-          >
-            {result && result.matches.length === 0
-              ? '데이터베이스 등록 안내'
-              : '(매칭 결과가 없을 경우) 데이터베이스 등록 안내'}
-          </button>
+          <RegisterButton
+            status={registerStatus}
+            onRegister={handleRegister}
+            readyHint="등록하면 기부자가 물품을 등록할 때 이 필요 물품이 매칭 결과에 나와요."
+            doneMessage="필요 물품을 등록했어요."
+          />
         </div>
       </div>
     </div>

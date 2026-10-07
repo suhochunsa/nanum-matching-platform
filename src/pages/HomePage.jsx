@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom'
 import ItemCard from '../components/ItemCard.jsx'
-import { donorItems, institutionNeeds } from '../data/mockData.js'
+import { getDonorItems, getInstitutionNeeds } from '../data/store.js'
 
 export default function HomePage() {
+  // 등록한 항목이 바로 보이도록 화면을 열 때마다 임시 DB에서 읽는다.
+  const donorItems = getDonorItems()
+  const institutionNeeds = getInstitutionNeeds()
+
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
       {/* 홈 화면 상단: 서비스 소개 + 기부자/기관 진입 버튼 */}

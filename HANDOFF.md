@@ -38,13 +38,29 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 |---|---|---|
 | `/` | `src/pages/HomePage.jsx` | 서비스 소개, 기부자/기관 진입 버튼, 기부 등록 물품·기관 필요 물품 카드 목록 |
 | `/login` | `src/pages/LoginPage.jsx` | 개인(기부자)/기관 토글, 아이디·비밀번호 (제출 시 선택한 유형 화면으로 이동만 함) |
-| `/donor` | `src/pages/DonorPage.jsx` | 기부자 정보(이름·연락처) + 물품 정보(사진·이름·범주·수량·상태·상세 정보) 입력 → 입력값 요약·매칭 결과·예상 크레딧 표시 |
-| `/institution` | `src/pages/InstitutionPage.jsx` | 필요 물품(이름·범주·수량) + 기관 정보(기관명·위치·연락처) 입력 → 입력값 요약·DB 내 일치 결과 표시 |
+| `/donor` | `src/pages/DonorPage.jsx` | 기부자 정보(이름·연락처·지역) + 물품 정보(사진·이름·범주·수량·상태·상세 정보) + 가능한 전달 방법 입력 → 입력값 요약·매칭 결과·기관별 기부 방법·예상 크레딧 표시, DB 등록 |
+| `/institution` | `src/pages/InstitutionPage.jsx` | 필요 물품(이름·범주·수량) + 기관 정보(기관명·위치·연락처·방문 가능 시간) + 받을 수 있는 방법 입력 → 입력값 요약·DB 내 일치 결과·물품별 수령 방법 표시, DB 등록 |
 
 공통 레이아웃은 `src/components/Layout.jsx`(헤더/푸터), 카드 UI는
 `src/components/ItemCard.jsx`. 폼 공통 부품은 `FormField.jsx`(라벨·오류 표시),
 `formStyles.js`(입력칸 스타일), `InputSummary.jsx`(제출값 요약 카드),
-`CategoryTree.jsx`(범주 트리 다중 선택).
+`CategoryTree.jsx`(범주 트리 다중 선택), `MethodPicker.jsx`(전달 방법 다중 선택),
+`GuideBox.jsx`(기부·수령 방법 안내), `RegisterButton.jsx`(DB 등록 버튼).
+
+기부 방법·수령 방법 (5차시, `src/data/delivery.js`):
+- 전달 방법 3가지: 직접 전달(dropoff) / 택배(parcel) / 방문 수거(pickup)
+- 기부자는 "가능한 방법", 기관은 "받을 수 있는 방법"을 고르고, 둘 다 가능한 방법만 안내
+- 기부자 화면: 매칭 항목의 "기부 방법 보기" → 기관 주소·방문 시간·연락처 등
+- 기관 화면: "수령 방법 보기" → 기부자 지역 등 (기부자 연락처는 매칭 확정 후 공개 예정)
+- 겹치는 방법이 없으면 그 사실과 상대가 가능한 방법을 안내
+- 아직 매칭 점수에는 반영 안 함 (전달 방법이 안 맞아도 순위는 같음)
+
+DB 등록 (`src/data/store.js`, 임시):
+- 매칭 확인 후 "데이터베이스에 등록하기" → 제출했던 값을 저장, 한 결과당 한 번
+- mock 데이터 + 이 브라우저 localStorage(`nanum-mock-db-v1`)에 추가한 항목을 합쳐서 돌려줌
+- 등록한 항목은 홈 목록 맨 앞과 상대편 매칭 결과에 바로 나타남
+- 다른 브라우저·기기에서는 안 보임. 7차시에 store.js의 함수만 Supabase로 바꾸면 됨
+- 기부자 연락처와 사진 파일은 저장 안 함 (사진은 파일명만)
 
 범주는 2단 트리(`src/data/categories.js`의 `CATEGORY_TREE`, 큰 범주 → 세부 범주)이고
 여러 개를 고를 수 있음. 값은 `'의류/아우터'` 같은 문자열 배열(`categories`)로 다룸.
@@ -61,13 +77,14 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 
 `src/data/mockData.js`에 전부 모여 있고, 각 폼 컴포넌트 안에 `TODO` 주석으로 표시해둠.
 
-- `donorItems`, `institutionNeeds`: 실제로는 Supabase 테이블에서 조회해야 함
+- `donorItems`, `institutionNeeds`, `institutions`(mockData.js): 실제로는 Supabase 테이블에서 조회해야 함.
+  화면은 모두 `store.js`를 거쳐 읽으므로 store.js만 바꾸면 됨
 - `matchDonorToInstitutions`, `matchInstitutionToDonors`(`src/data/matching.js`): 로직은
   4차시에 고도화 완료, 데이터 소스만 mock이라 Supabase 조회로 교체 필요
 - 크레딧 계산(`CATEGORY_BASE_CREDIT`): 임시 값. 실제 정책 정하면 교체
 - 로그인: 실제 인증 없음, 그냥 화면 전환만 함 (Supabase Auth 연동 필요)
 - 이미지 업로드: 선택·미리보기·검사까지만, 실제 업로드/저장은 안 됨 (Supabase Storage 필요)
-- 폼 입력값: 검사 후 화면에만 표시, 저장 안 됨 (각 페이지 `handleSubmit`의 TODO)
+- 폼 입력값 저장: localStorage 임시 저장만 됨 (각 페이지 `handleRegister`의 TODO, `store.js`)
 
 ## 매칭 점수 규칙 (4차시, `src/data/matching.js`)
 
@@ -90,7 +107,7 @@ Claude(Cowork)에서 계획서와 UI 스케치를 보고 프론트엔드 뼈대�
 - [x] 2차시: 메인 화면 뼈대 (완료 — HomePage)
 - [x] 3차시: 기부자·기관 입력 폼 + 입력값 확인 (완료 — 계획서 입력 항목 전부 반영, validation.js)
 - [x] 4차시: 매칭 처리 로직 고도화 — 완료 (`src/data/matching.js`, 아래 "매칭 점수 규칙" 참고)
-- [x] 5차시: 결과 화면 (완료, mock 기반) — **Vercel 첫 배포는 아직**
+- [x] 5차시: 결과 화면 — 기부 방법·수령 방법·DB 등록 버튼 완료 (mock + localStorage) — **Vercel 첫 배포는 아직**
 - [ ] 6차시: Supabase 프로젝트 생성 및 연결
 - [ ] 7차시: 기부자·기관·물품 정보 저장 기능
 - [ ] 8차시: 저장 데이터 기반 매칭·크레딧 반영

@@ -37,6 +37,10 @@ function checkCategories(categories) {
   if (categories.length === 0) return '범주를 하나 이상 선택해 주세요.'
 }
 
+function checkMethods(methods, label) {
+  if (methods.length === 0) return `${withJosa(label, '을', '를')} 하나 이상 선택해 주세요.`
+}
+
 function checkPhoto(file) {
   if (!file) return
   if (!file.type.startsWith('image/')) return '이미지 파일만 올릴 수 있어요.'
@@ -52,6 +56,7 @@ export function validateDonor(v) {
   return compact({
     donorName: checkText(v.donorName, '이름', { min: 2, max: 20 }),
     donorPhone: checkPhone(v.donorPhone),
+    region: checkText(v.region, '지역', { min: 2, max: 30 }),
     photo: checkPhoto(v.photo),
     title: checkText(v.title, '물품 이름', { min: 2, max: 40 }),
     categories: checkCategories(v.categories),
@@ -60,6 +65,7 @@ export function validateDonor(v) {
       v.detail.length > MAX_DETAIL_LENGTH
         ? `상세 정보는 ${MAX_DETAIL_LENGTH}자 이하로 입력해 주세요.`
         : undefined,
+    methods: checkMethods(v.methods, '전달 방법'),
   })
 }
 
@@ -72,5 +78,7 @@ export function validateInstitution(v) {
     orgName: checkText(v.orgName, '기관명', { min: 2, max: 30 }),
     orgLocation: checkText(v.orgLocation, '위치', { min: 2, max: 60 }),
     orgPhone: checkPhone(v.orgPhone),
+    hours: v.hours.length > 40 ? '방문 가능 시간은 40자 이하로 입력해 주세요.' : undefined,
+    methods: checkMethods(v.methods, '받을 수 있는 방법'),
   })
 }

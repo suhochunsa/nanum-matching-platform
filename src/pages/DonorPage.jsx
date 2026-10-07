@@ -2,23 +2,35 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
 import FormField from '../components/FormField.jsx'
+import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
+import MethodPicker from '../components/MethodPicker.jsx'
+import RegisterButton from '../components/RegisterButton.jsx'
 import { fieldClass } from '../components/formStyles.js'
 import { formatCategory } from '../data/categories.js'
+import { donationGuide, methodLabel } from '../data/delivery.js'
 import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
+import { addDonorItem } from '../data/store.js'
 import { MAX_DETAIL_LENGTH, MAX_PHOTO_MB, validateDonor } from '../data/validation.js'
 
 const INITIAL_VALUES = {
   donorName: '',
   donorPhone: '',
+  region: '',
   photo: null,
   title: '',
   categories: [],
   condition: CONDITIONS[0],
   quantity: '1',
   detail: '',
+  methods: [],
+}
+
+// 목록에는 이름을 가려서 보여준다. (정수호 → 정OO)
+function maskName(name) {
+  return `${name.trim()[0]}OO`
 }
 
 export default function DonorPage() {
@@ -26,6 +38,7 @@ export default function DonorPage() {
   const [submitted, setSubmitted] = useState(false)
   const [preview, setPreview] = useState('')
   const [result, setResult] = useState(null)
+  const [registerStatus, setRegisterStatus] = useState('idle')
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
   const errors = submitted ? validateDonor(values) : {}
@@ -54,17 +67,37 @@ export default function DonorPage() {
       return
     }
 
-    // TODO(6~7차시): Supabase에 기부자·기부 물품 정보 저장 (사진은 Storage에 업로드)
     setResult({
       id: Date.now(),
       submitted: {
         ...values,
         title: values.title.trim(),
+        region: values.region.trim(),
         detail: values.detail.trim(),
         registeredAt: new Date().toLocaleDateString('ko-KR'),
       },
       ...matchDonorToInstitutions(values),
     })
+    setRegisterStatus('ready')
+  }
+
+  // 매칭 확인 때 제출한 값(result.submitted)을 그대로 등록한다.
+  // TODO(6~7차시): Supabase에 기부자·기부 물품 정보 저장 (사진은 Storage에 업로드)
+  function handleRegister() {
+    const s = result.submitted
+    const saved = addDonorItem({
+      categories: s.categories,
+      title: s.title,
+      quantity: Number(s.quantity),
+      condition: s.condition,
+      donor: maskName(s.donorName),
+      region: s.region,
+      methods: s.methods,
+      detail: s.detail,
+      photoName: s.photo?.name ?? '',
+      registeredAt: s.registeredAt,
+    })
+    setRegisterStatus(saved ? 'done' : 'error')
   }
 
   return (
@@ -110,6 +143,23 @@ export default function DonorPage() {
                 onChange={update('donorPhone')}
                 placeholder="010-1234-5678"
                 className={fieldClass(errors.donorPhone)}
+              />
+            </FormField>
+
+            <FormField
+              id="region"
+              label="지역"
+              required
+              hint="시·구까지만 적어 주세요. 방문 수거 안내에 쓰여요."
+              error={errors.region}
+            >
+              <input
+                id="region"
+                type="text"
+                value={values.region}
+                onChange={update('region')}
+                placeholder="예: 서울 마포구"
+                className={fieldClass(errors.region)}
               />
             </FormField>
           </fieldset>
@@ -211,6 +261,25 @@ export default function DonorPage() {
             </FormField>
           </fieldset>
 
+          <fieldset>
+            <legend className="mb-3 font-semibold text-brand-800">전달 방법</legend>
+            <FormField
+              id="methods"
+              label="가능한 전달 방법"
+              required
+              hint="여러 개 선택할 수 있어요. 기관이 받을 수 있는 방법과 맞춰 기부 방법을 안내해요."
+              error={errors.methods}
+            >
+              <MethodPicker
+                id="methods"
+                audience="donor"
+                value={values.methods}
+                onChange={(methods) => setValues((v) => ({ ...v, methods }))}
+                error={errors.methods}
+              />
+            </FormField>
+          </fieldset>
+
           <button
             type="submit"
             className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors"
@@ -235,6 +304,7 @@ export default function DonorPage() {
                 <InputSummary
                   rows={[
                     ['기부자', `${result.submitted.donorName} · ${result.submitted.donorPhone}`],
+                    ['지역', result.submitted.region],
                     [
                       '물품',
                       `${result.submitted.title} (${result.submitted.condition} · ${result.submitted.quantity}개)`,
@@ -245,6 +315,7 @@ export default function DonorPage() {
                     ],
                     ['사진', result.submitted.photo ? result.submitted.photo.name : '없음'],
                     ['상세 정보', result.submitted.detail || '없음'],
+                    ['전달 방법', result.submitted.methods.map(methodLabel).join(', ')],
                     ['등록일', result.submitted.registeredAt],
                   ]}
                 />
@@ -264,6 +335,19 @@ export default function DonorPage() {
                       matches={result.matches}
                       primary={(m) => `${m.org} · ${m.title}`}
                       secondary={(m) => `${m.categories.map(formatCategory).join(', ')} · 필요 수량 ${m.quantity}`}
+                      detailLabel="기부 방법 보기"
+                      renderDetail={(m) =>
+                        m.institution ? (
+                          <GuideBox
+                            guide={donationGuide(result.submitted, m.institution)}
+                            fallback={`선택한 전달 방법으로는 이 기관에 기부하기 어려워요. 기관이 받는 방법: ${m.institution.methods
+                              .map(methodLabel)
+                              .join(', ')} · 문의 ${m.institution.phone}`}
+                          />
+                        ) : (
+                          <GuideBox guide={[]} fallback="기관 정보를 찾을 수 없어요." />
+                        )
+                      }
                     />
                   </div>
                 ) : (
@@ -276,14 +360,12 @@ export default function DonorPage() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="rounded-xl bg-brand-100 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-200 transition-colors"
-          >
-            {result && result.matches.length === 0
-              ? '데이터베이스에 등록하기'
-              : '매칭 안내 · 데이터베이스 등록 버튼'}
-          </button>
+          <RegisterButton
+            status={registerStatus}
+            onRegister={handleRegister}
+            readyHint="등록하면 기관이 필요 물품을 찾을 때 이 물품이 검색 결과에 나와요."
+            doneMessage="기부 물품을 등록했어요."
+          />
         </div>
       </div>
     </div>

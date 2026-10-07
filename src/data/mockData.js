@@ -7,31 +7,46 @@ export const CONDITIONS = ['새 상품', '사용감 적음', '사용감 있음']
 
 // 기부자가 등록한 물품 (홈 화면 왼쪽 목록)
 // categories: 세부 카테고리 여러 개 ("큰/세부")
+// methods: 기부자가 가능한 전달 방법 (delivery.js의 dropoff / parcel / pickup)
 export const donorItems = [
-  { id: 'd1', categories: ['의류/아우터'], title: '겨울 패딩 점퍼', quantity: 3, condition: '사용감 적음', donor: '김OO' },
-  { id: 'd2', categories: ['학용품/공책'], title: '스프링 노트 세트', quantity: 20, condition: '새 상품', donor: '이OO' },
-  { id: 'd3', categories: ['가구/책상'], title: '2인용 책상', quantity: 1, condition: '사용감 있음', donor: '박OO' },
-  { id: 'd4', categories: ['식품/즉석식품'], title: '즉석밥 30개입', quantity: 2, condition: '새 상품', donor: '최OO' },
-  { id: 'd5', categories: ['생활용품/이불·담요'], title: '담요 세트', quantity: 5, condition: '사용감 적음', donor: '정OO' },
-  { id: 'd6', categories: ['의류/신발', '의류/아동복'], title: '아동용 운동화', quantity: 4, condition: '사용감 있음', donor: '한OO' },
-  { id: 'd7', categories: ['의류/아우터'], title: '아디다스 겨울 패딩', quantity: 2, condition: '새 상품', donor: '윤OO' },
-  { id: 'd8', categories: ['의류/아우터', '의류/아동복'], title: '아동 롱패딩 (140)', quantity: 6, condition: '사용감 적음', donor: '장OO' },
-  { id: 'd9', categories: ['의류/방한용품'], title: '방한 장갑·목도리 세트', quantity: 12, condition: '새 상품', donor: '임OO' },
-  { id: 'd10', categories: ['의류/상의', '의류/아우터'], title: '나이키 후드 집업', quantity: 3, condition: '사용감 있음', donor: '오OO' },
-  { id: 'd11', categories: ['의류/아우터', '의류/아동복'], title: '어린이 겨울 외투', quantity: 8, condition: '사용감 적음', donor: '서OO' },
-  { id: 'd12', categories: ['학용품/미술용품'], title: '색연필 24색', quantity: 30, condition: '새 상품', donor: '권OO' },
-  { id: 'd13', categories: ['학용품/도서·문제집'], title: '초등 교과서 문제집', quantity: 15, condition: '사용감 있음', donor: '황OO' },
-  { id: 'd14', categories: ['학용품/필기구'], title: '필기구 세트 (볼펜·샤프)', quantity: 40, condition: '새 상품', donor: '안OO' },
-  { id: 'd15', categories: ['가구/의자'], title: '접이식 의자', quantity: 6, condition: '사용감 적음', donor: '송OO' },
-  { id: 'd16', categories: ['가구/수납·책장'], title: '3단 책장', quantity: 2, condition: '사용감 있음', donor: '류OO' },
-  { id: 'd17', categories: ['식품/통조림'], title: '통조림 참치 세트', quantity: 40, condition: '새 상품', donor: '홍OO' },
-  { id: 'd18', categories: ['식품/라면·면류', '식품/즉석식품'], title: '컵라면 박스', quantity: 10, condition: '새 상품', donor: '문OO' },
-  { id: 'd19', categories: ['생활용품/이불·담요'], title: '극세사 이불', quantity: 8, condition: '사용감 적음', donor: '배OO' },
-  { id: 'd20', categories: ['생활용품/이불·담요'], title: '겨울 담요', quantity: 20, condition: '새 상품', donor: '신OO' },
-  { id: 'd21', categories: ['생활용품/난방용품', '기타/전자기기'], title: '전기 히터', quantity: 2, condition: '사용감 있음', donor: '조OO' },
-  { id: 'd22', categories: ['기타/장난감·게임'], title: '보드게임 모음', quantity: 5, condition: '사용감 적음', donor: '남OO' },
-  { id: 'd23', categories: ['기타/전자기기'], title: '아이패드 거치대', quantity: 1, condition: '새 상품', donor: '고OO' },
-  { id: 'd24', categories: ['의류/아우터'], title: '성인 겨울 점퍼', quantity: 5, condition: '사용감 적음', donor: '노OO' },
+  { id: 'd1', categories: ['의류/아우터'], title: '겨울 패딩 점퍼', quantity: 3, condition: '사용감 적음', donor: '김OO', region: '서울 마포구', methods: ['dropoff', 'parcel'] },
+  { id: 'd2', categories: ['학용품/공책'], title: '스프링 노트 세트', quantity: 20, condition: '새 상품', donor: '이OO', region: '서울 은평구', methods: ['parcel'] },
+  { id: 'd3', categories: ['가구/책상'], title: '2인용 책상', quantity: 1, condition: '사용감 있음', donor: '박OO', region: '경기 고양시', methods: ['pickup'] },
+  { id: 'd4', categories: ['식품/즉석식품'], title: '즉석밥 30개입', quantity: 2, condition: '새 상품', donor: '최OO', region: '서울 서대문구', methods: ['dropoff', 'parcel'] },
+  { id: 'd5', categories: ['생활용품/이불·담요'], title: '담요 세트', quantity: 5, condition: '사용감 적음', donor: '정OO', region: '서울 마포구', methods: ['dropoff'] },
+  { id: 'd6', categories: ['의류/신발', '의류/아동복'], title: '아동용 운동화', quantity: 4, condition: '사용감 있음', donor: '한OO', region: '서울 용산구', methods: ['parcel'] },
+  { id: 'd7', categories: ['의류/아우터'], title: '아디다스 겨울 패딩', quantity: 2, condition: '새 상품', donor: '윤OO', region: '서울 마포구', methods: ['dropoff', 'parcel', 'pickup'] },
+  { id: 'd8', categories: ['의류/아우터', '의류/아동복'], title: '아동 롱패딩 (140)', quantity: 6, condition: '사용감 적음', donor: '장OO', region: '경기 고양시', methods: ['parcel', 'pickup'] },
+  { id: 'd9', categories: ['의류/방한용품'], title: '방한 장갑·목도리 세트', quantity: 12, condition: '새 상품', donor: '임OO', region: '서울 종로구', methods: ['parcel'] },
+  { id: 'd10', categories: ['의류/상의', '의류/아우터'], title: '나이키 후드 집업', quantity: 3, condition: '사용감 있음', donor: '오OO', region: '서울 은평구', methods: ['dropoff'] },
+  { id: 'd11', categories: ['의류/아우터', '의류/아동복'], title: '어린이 겨울 외투', quantity: 8, condition: '사용감 적음', donor: '서OO', region: '서울 서대문구', methods: ['dropoff', 'pickup'] },
+  { id: 'd12', categories: ['학용품/미술용품'], title: '색연필 24색', quantity: 30, condition: '새 상품', donor: '권OO', region: '서울 마포구', methods: ['parcel'] },
+  { id: 'd13', categories: ['학용품/도서·문제집'], title: '초등 교과서 문제집', quantity: 15, condition: '사용감 있음', donor: '황OO', region: '서울 용산구', methods: ['dropoff', 'parcel'] },
+  { id: 'd14', categories: ['학용품/필기구'], title: '필기구 세트 (볼펜·샤프)', quantity: 40, condition: '새 상품', donor: '안OO', region: '서울 종로구', methods: ['parcel'] },
+  { id: 'd15', categories: ['가구/의자'], title: '접이식 의자', quantity: 6, condition: '사용감 적음', donor: '송OO', region: '경기 고양시', methods: ['pickup'] },
+  { id: 'd16', categories: ['가구/수납·책장'], title: '3단 책장', quantity: 2, condition: '사용감 있음', donor: '류OO', region: '서울 은평구', methods: ['pickup'] },
+  { id: 'd17', categories: ['식품/통조림'], title: '통조림 참치 세트', quantity: 40, condition: '새 상품', donor: '홍OO', region: '서울 마포구', methods: ['parcel'] },
+  { id: 'd18', categories: ['식품/라면·면류', '식품/즉석식품'], title: '컵라면 박스', quantity: 10, condition: '새 상품', donor: '문OO', region: '서울 서대문구', methods: ['dropoff', 'parcel'] },
+  { id: 'd19', categories: ['생활용품/이불·담요'], title: '극세사 이불', quantity: 8, condition: '사용감 적음', donor: '배OO', region: '서울 용산구', methods: ['dropoff', 'parcel'] },
+  { id: 'd20', categories: ['생활용품/이불·담요'], title: '겨울 담요', quantity: 20, condition: '새 상품', donor: '신OO', region: '서울 마포구', methods: ['parcel'] },
+  { id: 'd21', categories: ['생활용품/난방용품', '기타/전자기기'], title: '전기 히터', quantity: 2, condition: '사용감 있음', donor: '조OO', region: '경기 고양시', methods: ['dropoff', 'pickup'] },
+  { id: 'd22', categories: ['기타/장난감·게임'], title: '보드게임 모음', quantity: 5, condition: '사용감 적음', donor: '남OO', region: '서울 종로구', methods: ['dropoff', 'parcel'] },
+  { id: 'd23', categories: ['기타/전자기기'], title: '아이패드 거치대', quantity: 1, condition: '새 상품', donor: '고OO', region: '서울 은평구', methods: ['parcel'] },
+  { id: 'd24', categories: ['의류/아우터'], title: '성인 겨울 점퍼', quantity: 5, condition: '사용감 적음', donor: '노OO', region: '서울 마포구', methods: ['dropoff', 'parcel'] },
+]
+
+// 기관 정보 (필요 물품의 org 이름으로 찾는다)
+// methods: 기관이 받을 수 있는 방법 (delivery.js의 dropoff / parcel / pickup)
+export const institutions = [
+  { name: '햇살보육원', location: '서울 마포구 성미산로 12', phone: '02-312-4501', hours: '평일 10:00~17:00', methods: ['dropoff', 'parcel'] },
+  { name: '느티나무 복지관', location: '서울 서대문구 연희로 88', phone: '02-334-2210', hours: '평일 09:00~18:00', methods: ['dropoff', 'parcel', 'pickup'] },
+  { name: '푸른꿈 지역아동센터', location: '서울 은평구 통일로 545', phone: '02-385-7712', hours: '평일 13:00~19:00', methods: ['dropoff', 'parcel'] },
+  { name: '희망나눔센터', location: '경기 고양시 덕양구 화중로 30', phone: '031-962-3300', hours: '평일·토 10:00~16:00', methods: ['dropoff', 'pickup'] },
+  { name: '한사랑 요양원', location: '서울 용산구 효창원로 70', phone: '02-713-9080', hours: '매일 10:00~16:00', methods: ['dropoff', 'parcel'] },
+  { name: '사랑의 쉼터', location: '서울 종로구 율곡로 190', phone: '02-747-1004', hours: '', methods: ['parcel'] },
+  { name: '나눔 노인복지관', location: '서울 마포구 월드컵북로 21', phone: '02-325-6600', hours: '평일 09:00~18:00', methods: ['dropoff', 'parcel', 'pickup'] },
+  { name: '다솜 자활센터', location: '서울 은평구 은평로 200', phone: '02-353-4040', hours: '평일 10:00~18:00', methods: ['dropoff', 'pickup'] },
+  { name: '꿈나무 공부방', location: '서울 서대문구 신촌로 40', phone: '02-393-2525', hours: '평일 15:00~20:00', methods: ['dropoff'] },
 ]
 
 // 기관이 등록한 필요 물품 (홈 화면 오른쪽 목록)
