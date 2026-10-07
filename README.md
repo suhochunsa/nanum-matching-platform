@@ -3,6 +3,9 @@
 기부자·기관 프로필과 기부 크레딧을 기반으로 한 나눔 자동 매칭 플랫폼의 프론트엔드입니다.
 계획서와 `ui구상.pptx`의 화면 스케치를 바탕으로 만들었습니다.
 
+배포 주소: https://nanum-matching-platform.vercel.app
+(`main` 브랜치에 push하면 Vercel이 자동으로 다시 배포합니다.)
+
 ## 실행 방법
 
 ```bash
