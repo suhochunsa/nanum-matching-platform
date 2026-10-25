@@ -9,6 +9,7 @@ import MethodPicker from '../components/MethodPicker.jsx'
 import RegisterButton from '../components/RegisterButton.jsx'
 import { fieldClass } from '../components/formStyles.js'
 import { formatCategory } from '../data/categories.js'
+import { availabilityLabel } from '../data/dates.js'
 import { methodLabel, receiveGuide } from '../data/delivery.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
 import { addInstitutionNeed } from '../data/store.js'
@@ -268,7 +269,7 @@ export default function InstitutionPage() {
                       matches={result.matches}
                       primary={(m) => m.title}
                       secondary={(m) =>
-                        `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition}`
+                        `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition} · 기부 가능 ${availabilityLabel(m.availableUntil)}`
                       }
                       photo={(m) => m.photo}
                       detailLabel="수령 방법 보기"

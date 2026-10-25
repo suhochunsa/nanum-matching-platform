@@ -62,6 +62,7 @@ export default function HomePage() {
                 tone="brand"
                 showPhoto
                 photo={item.photo}
+                availableUntil={item.availableUntil}
               />
             ))}
           </div>

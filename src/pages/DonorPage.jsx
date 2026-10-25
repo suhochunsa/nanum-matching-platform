@@ -9,6 +9,7 @@ import MethodPicker from '../components/MethodPicker.jsx'
 import RegisterButton from '../components/RegisterButton.jsx'
 import { fieldClass } from '../components/formStyles.js'
 import { formatCategory } from '../data/categories.js'
+import { availabilityLabel, todayString } from '../data/dates.js'
 import { donationGuide, methodLabel } from '../data/delivery.js'
 import { compressImage } from '../data/image.js'
 import { CONDITIONS } from '../data/mockData.js'
@@ -25,6 +26,8 @@ const INITIAL_VALUES = {
   categories: [],
   condition: CONDITIONS[0],
   quantity: '1',
+  availableUntil: '',
+  noDeadline: false,
   detail: '',
   methods: [],
 }
@@ -75,6 +78,7 @@ export default function DonorPage() {
         ...values,
         title: values.title.trim(),
         region: values.region.trim(),
+        availableUntil: values.noDeadline ? null : values.availableUntil,
         detail: values.detail.trim(),
         registeredAt: new Date().toLocaleDateString('ko-KR'),
       },
@@ -110,6 +114,7 @@ export default function DonorPage() {
       donor: maskName(s.donorName),
       region: s.region,
       methods: s.methods,
+      availableUntil: s.availableUntil,
       detail: s.detail,
       photo,
       registeredAt: s.registeredAt,
@@ -262,6 +267,35 @@ export default function DonorPage() {
             </div>
 
             <FormField
+              id="availableUntil"
+              label="기부 가능 마감일"
+              required
+              hint="유통기한 등으로 이 날짜까지만 기부할 수 있어요. 지나면 목록에 '만료'로 표시돼요."
+              error={errors.availableUntil}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  id="availableUntil"
+                  type="date"
+                  min={todayString()}
+                  value={values.availableUntil}
+                  onChange={update('availableUntil')}
+                  disabled={values.noDeadline}
+                  className={`${fieldClass(errors.availableUntil)} disabled:bg-black/5 disabled:text-black/35`}
+                />
+                <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-black/70">
+                  <input
+                    type="checkbox"
+                    checked={values.noDeadline}
+                    onChange={(e) => setValues((v) => ({ ...v, noDeadline: e.target.checked }))}
+                    className="h-4 w-4 accent-brand-600"
+                  />
+                  기한 없음
+                </label>
+              </div>
+            </FormField>
+
+            <FormField
               id="detail"
               label="상세 정보"
               hint={`선택 · 사이즈, 구매 시기, 하자 여부 등 (${values.detail.length}/${MAX_DETAIL_LENGTH})`}
@@ -331,6 +365,7 @@ export default function DonorPage() {
                       result.submitted.categories.map(formatCategory).join(', '),
                     ],
                     ['사진', result.submitted.photo ? result.submitted.photo.name : '없음'],
+                    ['기부 가능 기간', availabilityLabel(result.submitted.availableUntil)],
                     ['상세 정보', result.submitted.detail || '없음'],
                     ['전달 방법', result.submitted.methods.map(methodLabel).join(', ')],
                     ['등록일', result.submitted.registeredAt],

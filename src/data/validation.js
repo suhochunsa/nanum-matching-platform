@@ -1,6 +1,8 @@
 // 3차시 "입력값 확인": 폼 값을 검사해 { 필드이름: 오류 메시지 } 형태로 돌려준다.
 // 오류가 없으면 빈 객체.
 
+import { todayString } from './dates.js'
+
 export const MAX_PHOTO_MB = 5
 export const MAX_DETAIL_LENGTH = 300
 
@@ -41,6 +43,13 @@ function checkMethods(methods, label) {
   if (methods.length === 0) return `${withJosa(label, '을', '를')} 하나 이상 선택해 주세요.`
 }
 
+// 기한 없음을 고르지 않았다면 마감일이 있어야 하고, 이미 지난 날짜는 안 된다.
+function checkAvailableUntil(date, noDeadline) {
+  if (noDeadline) return
+  if (!date) return "기부 가능 마감일을 고르거나 '기한 없음'을 선택해 주세요."
+  if (date < todayString()) return '마감일은 오늘이나 그 이후 날짜로 골라 주세요.'
+}
+
 function checkPhoto(file) {
   if (!file) return
   if (!file.type.startsWith('image/')) return '이미지 파일만 올릴 수 있어요.'
@@ -61,6 +70,7 @@ export function validateDonor(v) {
     title: checkText(v.title, '물품 이름', { min: 2, max: 40 }),
     categories: checkCategories(v.categories),
     quantity: checkQuantity(v.quantity),
+    availableUntil: checkAvailableUntil(v.availableUntil, v.noDeadline),
     detail:
       v.detail.length > MAX_DETAIL_LENGTH
         ? `상세 정보는 ${MAX_DETAIL_LENGTH}자 이하로 입력해 주세요.`
