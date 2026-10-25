@@ -115,6 +115,17 @@ DB 등록 (`src/data/store.js`, 임시):
 - 크레딧 계산은 아직 임시 규칙 그대로 (상태 미반영). 큰 범주를 여러 개 고르면 그중 가장 높은 기본 점수 사용
 - 한계: "패딩" ↔ "외투"처럼 글자가 다른 동의어는 못 잡음 (동의어 사전 필요)
 
+## Supabase 테이블 (6차시 준비, `supabase/`)
+
+- `migrations/20261026000000_init.sql`: 테이블 6개 + 제약조건 + RLS
+  - institutions, institution_needs, donors, donor_items, matches, credit_logs
+  - 컬럼은 앱 값 형식과 같음 (범주·전달 방법은 text[], 마감일 date/null)
+  - donor_items.donor_display에 가린 이름(정OO) 저장 → donors(연락처)는 공개하지 않음
+  - RLS: 공개 키(anon)는 institutions·institution_needs·donor_items 읽기만 가능. 쓰기는 7차시에 정책 추가
+- `seed.sql`: mockData.js와 같은 테스트 데이터 51행 (마감일은 current_date 기준 상대값)
+- 둘 다 PGlite(로컬 Postgres)로 실행 검증 완료: 제약조건 위반 거부, anon 쓰기 거부 확인
+- 적용 방법: Supabase 대시보드 SQL Editor에 init.sql → seed.sql 순서로 붙여넣어 실행
+
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)
