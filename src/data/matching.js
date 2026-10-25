@@ -1,6 +1,5 @@
 import { parentOf, parentsOf } from './categories.js'
 import { isExpired } from './dates.js'
-import { findInstitution, getDonorItems, getInstitutionNeeds } from './store.js'
 
 // 매칭 점수 = 아래 네 항목(각 0~1)을 가중합한 값(0~100점).
 export const WEIGHTS = { category: 0.35, name: 0.3, quantity: 0.2, condition: 0.15 }
@@ -122,11 +121,13 @@ function rank(list) {
  * 기부자 입력값을 기관 필요 목록과 대조해 점수 순으로 돌려준다.
  * 전체 후보를 반환하고, 상위 N개만 보여주는 건 화면(MatchList)에서 처리한다.
  * 각 결과에는 기부 방법 안내용 기관 정보(institution)를 붙인다.
+ * data: store.js의 loadData() 결과
  */
-export function matchDonorToInstitutions({ categories, title, quantity, condition }) {
+export function matchDonorToInstitutions({ categories, title, quantity, condition }, data) {
+  const findInstitution = (name) => data.institutions.find((i) => i.name === name)
   const qty = Number(quantity) || 0
   const matches = rank(
-    getInstitutionNeeds().map((need) =>
+    data.institutionNeeds.map((need) =>
       scoreMatch({
         categories,
         title,
@@ -144,13 +145,14 @@ export function matchDonorToInstitutions({ categories, title, quantity, conditio
 
 /**
  * 기관 입력값을 기부 등록 목록과 대조해 점수 순으로 돌려준다.
- * 기부 가능 기간이 지난 물품은 받을 수 없으므로 후보에서 뺀다.
+ * 기부 가능 기간이 지났거나 이미 매칭·기부된 물품은 받을 수 없으므로 후보에서 뺀다.
+ * data: store.js의 loadData() 결과
  */
-export function matchInstitutionToDonors({ categories, title, quantity }) {
+export function matchInstitutionToDonors({ categories, title, quantity }, data) {
   const need = Number(quantity) || 0
   const matches = rank(
-    getDonorItems()
-      .filter((item) => !isExpired(item.availableUntil))
+    data.donorItems
+      .filter((item) => !isExpired(item.availableUntil) && (item.status ?? 'available') === 'available')
       .map((item) =>
         scoreMatch({
           categories,

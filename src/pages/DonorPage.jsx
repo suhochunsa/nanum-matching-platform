@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
+import DataNotice from '../components/DataNotice.jsx'
 import FormField from '../components/FormField.jsx'
 import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
@@ -14,7 +15,7 @@ import { donationGuide, methodLabel } from '../data/delivery.js'
 import { compressImage } from '../data/image.js'
 import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
-import { addDonorItem } from '../data/store.js'
+import { addDonorItem, loadData } from '../data/store.js'
 import { MAX_DETAIL_LENGTH, MAX_PHOTO_MB, validateDonor } from '../data/validation.js'
 
 const INITIAL_VALUES = {
@@ -42,6 +43,7 @@ export default function DonorPage() {
   const [submitted, setSubmitted] = useState(false)
   const [preview, setPreview] = useState('')
   const [result, setResult] = useState(null)
+  const [checking, setChecking] = useState(false)
   const [registerStatus, setRegisterStatus] = useState('idle')
   const [registerError, setRegisterError] = useState('')
 
@@ -61,7 +63,7 @@ export default function DonorPage() {
     setPreview(file?.type.startsWith('image/') ? URL.createObjectURL(file) : '')
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setSubmitted(true)
 
@@ -71,6 +73,11 @@ export default function DonorPage() {
       document.getElementById(firstInvalid)?.focus()
       return
     }
+
+    // 매칭할 때마다 DB에서 최신 목록을 불러온다.
+    setChecking(true)
+    const data = await loadData()
+    setChecking(false)
 
     setResult({
       id: Date.now(),
@@ -82,7 +89,9 @@ export default function DonorPage() {
         detail: values.detail.trim(),
         registeredAt: new Date().toLocaleDateString('ko-KR'),
       },
-      ...matchDonorToInstitutions(values),
+      ...matchDonorToInstitutions(values, data),
+      source: data.source,
+      sourceError: data.error,
     })
     setRegisterStatus('ready')
   }
@@ -333,9 +342,10 @@ export default function DonorPage() {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors"
+            disabled={checking}
+            className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors disabled:cursor-wait disabled:opacity-70"
           >
-            매칭 확인하기
+            {checking ? '불러오는 중…' : '매칭 확인하기'}
           </button>
         </form>
 
@@ -352,6 +362,7 @@ export default function DonorPage() {
 
             {result && (
               <div className="space-y-4">
+                <DataNotice source={result.source} error={result.sourceError} />
                 <InputSummary
                   rows={[
                     ['기부자', `${result.submitted.donorName} · ${result.submitted.donorPhone}`],

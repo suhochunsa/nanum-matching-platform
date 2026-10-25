@@ -126,6 +126,18 @@ DB 등록 (`src/data/store.js`, 임시):
 - 둘 다 PGlite(로컬 Postgres)로 실행 검증 완료: 제약조건 위반 거부, anon 쓰기 거부 확인
 - 적용 방법: Supabase 대시보드 SQL Editor에 init.sql → seed.sql 순서로 붙여넣어 실행
 
+## Supabase 연결 (6차시)
+
+- 프로젝트: https://ibozvofahtvozuzynkqe.supabase.co (리전 Seoul)
+- 접속 정보: `.env.local`(로컬, git 제외)과 Vercel 환경변수(Production/Preview/Development)에
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. 변수 이름은 `.env.example` 참고
+  (publishable 키는 공개용. secret 키·DB 비밀번호는 저장소·채팅에 두지 않음)
+- `src/lib/supabase.js`: 클라이언트. `src/data/store.js`의 `loadData()`가 기관·필요 물품·기부 물품을 한 번에 불러옴
+  - DB 행(snake_case) → 화면용 객체(mockData와 같은 필드)로 변환
+  - 연결 실패(표 없음, 환경변수 없음 등) 시 mock 데이터로 대체하고 화면에 노란 안내(`DataNotice.jsx`) 표시
+  - 이 브라우저에서 등록한 localStorage 항목을 앞에 합침 (쓰기는 7차시에 DB로)
+- 매칭 함수는 `matchX(입력값, loadData() 결과)` 형태. 폼 제출 때마다 최신 데이터를 불러옴
+
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)

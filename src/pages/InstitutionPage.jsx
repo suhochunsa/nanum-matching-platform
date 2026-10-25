@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
+import DataNotice from '../components/DataNotice.jsx'
 import FormField from '../components/FormField.jsx'
 import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
@@ -12,7 +13,7 @@ import { formatCategory } from '../data/categories.js'
 import { availabilityLabel } from '../data/dates.js'
 import { methodLabel, receiveGuide } from '../data/delivery.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
-import { addInstitutionNeed } from '../data/store.js'
+import { addInstitutionNeed, loadData } from '../data/store.js'
 import { validateInstitution } from '../data/validation.js'
 
 const INITIAL_VALUES = {
@@ -30,6 +31,7 @@ export default function InstitutionPage() {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState(null)
+  const [checking, setChecking] = useState(false)
   const [registerStatus, setRegisterStatus] = useState('idle')
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
@@ -39,7 +41,7 @@ export default function InstitutionPage() {
     return (e) => setValues((v) => ({ ...v, [field]: e.target.value }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setSubmitted(true)
 
@@ -49,6 +51,11 @@ export default function InstitutionPage() {
       document.getElementById(firstInvalid)?.focus()
       return
     }
+
+    // 매칭할 때마다 DB에서 최신 목록을 불러온다.
+    setChecking(true)
+    const data = await loadData()
+    setChecking(false)
 
     setResult({
       id: Date.now(),
@@ -64,7 +71,9 @@ export default function InstitutionPage() {
         hours: values.hours.trim(),
         methods: values.methods,
       },
-      ...matchInstitutionToDonors(values),
+      ...matchInstitutionToDonors(values, data),
+      source: data.source,
+      sourceError: data.error,
     })
     setRegisterStatus('ready')
   }
@@ -222,9 +231,10 @@ export default function InstitutionPage() {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors"
+            disabled={checking}
+            className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors disabled:cursor-wait disabled:opacity-70"
           >
-            일치 결과 확인하기
+            {checking ? '불러오는 중…' : '일치 결과 확인하기'}
           </button>
         </form>
 
@@ -241,6 +251,7 @@ export default function InstitutionPage() {
 
             {result && (
               <div className="space-y-4">
+                <DataNotice source={result.source} error={result.sourceError} />
                 <InputSummary
                   rows={[
                     [
