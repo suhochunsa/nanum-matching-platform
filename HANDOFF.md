@@ -138,6 +138,23 @@ DB 등록 (`src/data/store.js`, 임시):
   - 이 브라우저에서 등록한 localStorage 항목을 앞에 합침 (쓰기는 7차시에 DB로)
 - 매칭 함수는 `matchX(입력값, loadData() 결과)` 형태. 폼 제출 때마다 최신 데이터를 불러옴
 
+## 로그인·프로필 (7차시, `supabase/migrations/20261026020000_auth_profiles.sql`)
+
+- Supabase Auth 이메일+비밀번호. 로그인 화면에서 기부자/기관을 고르고 로그인·회원가입
+  - 고른 역할과 계정 역할이 다르면 로그아웃시키고 안내
+  - 이메일 인증이 켜져 있으면 가입 후 메일 링크를 눌러야 로그인 가능 (대시보드 설정)
+- `profiles` 표: role, nickname(기부자), org_name(기관, 가입 후 변경 불가), avatar_url
+  - 가입 시 user metadata로 트리거(handle_new_user)가 자동 생성. 누구나 읽기, 본인은 닉네임·사진만 수정
+  - 프로필 사진: avatars 버킷 `<내 id>/<무작위>.jpg` (본인 폴더만 업로드, 256px로 줄여서)
+- donor_items.owner_id, institutions.owner_id 추가 → 홈 카드 오른쪽 아래에 올린 사람(사진+이름)
+  - 테스트 데이터는 주인이 없어 김OO/기관명 + 첫 글자 아이콘
+- 등록 함수는 로그인한 계정만: 기부자 → register_donor_item, 기관 → register_institution_need
+  - 기관명은 계정의 기관명을 DB가 사용. 내 기관이 있으면 위치·연락처 등을 새 값으로 갱신
+  - 같은 이름의 주인 없는 테스트 기관은 위치·연락처가 같아야 내 계정에 연결
+- 화면: `src/lib/AuthProvider.jsx`(로그인 상태), `authContext.js`(useAuth), 헤더는 로그인 버튼 하나 /
+  로그인 시 역할 링크+프로필+로그아웃, `/profile`(사진·닉네임 변경)
+- PGlite로 24가지 경우 검증 (역할·본인 확인, 남의 프로필·폴더 차단, 로그아웃 상태 쓰기 차단)
+
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)

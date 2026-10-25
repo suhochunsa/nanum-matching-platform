@@ -1,5 +1,6 @@
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel, daysLeft, isExpired } from '../data/dates.js'
+import Avatar from './Avatar.jsx'
 import PhotoThumb from './PhotoThumb.jsx'
 
 // 카드가 너무 길어지지 않게 범주 뱃지는 2개까지만 보여주고 나머지는 +N으로 줄인다.
@@ -9,13 +10,15 @@ const MAX_BADGES = 2
  * showPhoto: 기부 물품 카드처럼 사진 칸이 필요한 경우 true (photo가 없으면 "사진 없음")
  * availableUntil: 기부 가능 마감일. 지나면 빨간 테두리와 "기부 가능 기간 만료" 표시,
  *   3일 이내로 남으면 주황색으로 강조. null(기한 없음)이나 생략하면 아무것도 표시하지 않는다.
+ * meta: 수량 옆에 붙일 짧은 정보 (예: 물품 상태)
+ * owner: { name, avatar } 올린 사람(기부자 닉네임·기관명). 카드 오른쪽 아래에 작게 보여준다.
  */
 export default function ItemCard({
   categories,
   title,
   quantity,
-  sub,
-  subLabel,
+  meta,
+  owner,
   tone = 'brand',
   showPhoto,
   photo,
@@ -37,9 +40,9 @@ export default function ItemCard({
     >
       {showPhoto && <PhotoThumb src={photo} alt={title} />}
 
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
         {expired && (
-          <p className="mb-1.5 inline-block rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-600">
+          <p className="mb-1.5 self-start rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-600">
             기부 가능 기간 만료
           </p>
         )}
@@ -54,24 +57,31 @@ export default function ItemCard({
           )}
         </div>
         <h3 className="mt-2 font-semibold text-[15px] leading-snug">{title}</h3>
-        <div className="mt-2 flex items-center justify-between gap-2 text-sm text-black/60">
-          <span className="whitespace-nowrap">수량 {quantity}</span>
-          {sub && (
-            <span className="min-w-0 truncate text-black/50">
-              {subLabel ? `${subLabel} ` : ''}
-              {sub}
+        <p className="mt-2 text-sm text-black/60">
+          수량 {quantity}
+          {meta && <span className="text-black/45"> · {meta}</span>}
+        </p>
+
+        {/* 맨 아래 줄: 왼쪽 기부 가능 기간, 오른쪽 올린 사람 */}
+        <div className="mt-auto flex items-end justify-between gap-2 pt-1.5">
+          {availableUntil ? (
+            <p
+              className={`text-xs ${
+                expired ? 'text-red-600' : urgent ? 'font-medium text-accent-600' : 'text-black/45'
+              }`}
+            >
+              기부 가능: {availabilityLabel(availableUntil)}
+            </p>
+          ) : (
+            <span />
+          )}
+          {owner && (
+            <span className="flex min-w-0 shrink items-center gap-1.5 text-xs text-black/55">
+              <Avatar src={owner.avatar} name={owner.name} size="xs" />
+              <span className="truncate">{owner.name}</span>
             </span>
           )}
         </div>
-        {availableUntil && (
-          <p
-            className={`mt-1 text-xs ${
-              expired ? 'text-red-600' : urgent ? 'font-medium text-accent-600' : 'text-black/45'
-            }`}
-          >
-            기부 가능: {availabilityLabel(availableUntil)}
-          </p>
-        )}
       </div>
     </div>
   )

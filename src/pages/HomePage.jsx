@@ -78,8 +78,8 @@ export default function HomePage() {
                 categories={item.categories}
                 title={item.title}
                 quantity={item.quantity}
-                sub={item.condition}
-                subLabel=""
+                meta={item.condition}
+                owner={{ name: item.donor, avatar: item.donorAvatar }}
                 tone="brand"
                 showPhoto
                 photo={item.photo}
@@ -104,8 +104,7 @@ export default function HomePage() {
                 categories={need.categories}
                 title={need.title}
                 quantity={need.quantity}
-                sub={need.org}
-                subLabel=""
+                owner={{ name: need.org, avatar: need.orgAvatar }}
                 tone="accent"
               />
             ))}

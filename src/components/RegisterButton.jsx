@@ -2,15 +2,18 @@ import { Link } from 'react-router-dom'
 
 /**
  * 결과 화면 아래 "데이터베이스에 등록하기" 버튼.
- * status: 'idle'(아직 매칭 확인 전) | 'ready' | 'saving'(사진 줄이는 중 등) | 'done' | 'error'
+ * status: 'idle'(아직 매칭 확인 전) | 'ready' | 'saving'(사진 올리기·저장 중) | 'done' | 'error'
+ * blockedReason: 등록할 수 없는 이유(로그인 안 함, 다른 역할 계정 등). 있으면 버튼을 막고 로그인 링크를 보여준다.
  */
-export default function RegisterButton({ status, onRegister, readyHint, doneMessage, errorMessage }) {
+export default function RegisterButton({ status, onRegister, readyHint, doneMessage, errorMessage, blockedReason }) {
+  const blocked = status === 'ready' && Boolean(blockedReason)
+
   return (
     <div className="space-y-2">
       <button
         type="button"
         onClick={onRegister}
-        disabled={status !== 'ready'}
+        disabled={status !== 'ready' || blocked}
         className="w-full rounded-xl bg-brand-100 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-200 transition-colors disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand-100"
       >
         {status === 'done' ? '등록 완료 ✓' : status === 'saving' ? '등록하는 중…' : '데이터베이스에 등록하기'}
@@ -19,7 +22,15 @@ export default function RegisterButton({ status, onRegister, readyHint, doneMess
       {status === 'idle' && (
         <p className="text-center text-xs text-black/45">먼저 매칭 결과를 확인하면 등록할 수 있어요.</p>
       )}
-      {status === 'ready' && <p className="text-center text-xs text-black/50">{readyHint}</p>}
+      {blocked && (
+        <p className="text-center text-xs text-black/60">
+          {blockedReason}{' '}
+          <Link to="/login" className="font-medium text-brand-600 underline">
+            로그인하기
+          </Link>
+        </p>
+      )}
+      {status === 'ready' && !blocked && <p className="text-center text-xs text-black/50">{readyHint}</p>}
       {status === 'done' && (
         <p className="text-center text-xs text-brand-700">
           {doneMessage}{' '}
@@ -30,8 +41,7 @@ export default function RegisterButton({ status, onRegister, readyHint, doneMess
       )}
       {status === 'error' && (
         <p className="text-center text-xs text-red-600">
-          {errorMessage ||
-            '저장하지 못했어요. 브라우저 저장 공간이 가득 찼거나 사이트 데이터 저장이 막혀 있을 수 있어요.'}
+          {errorMessage || '저장하지 못했어요. 잠시 후 다시 시도해 주세요.'}
         </p>
       )}
     </div>

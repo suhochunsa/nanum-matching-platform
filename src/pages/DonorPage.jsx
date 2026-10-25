@@ -15,8 +15,9 @@ import { donationGuide, methodLabel } from '../data/delivery.js'
 import { compressImage } from '../data/image.js'
 import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
-import { addDonorItem, loadData } from '../data/store.js'
+import { loadData, registerDonorItem, uploadItemPhoto } from '../data/store.js'
 import { MAX_DETAIL_LENGTH, MAX_PHOTO_MB, validateDonor } from '../data/validation.js'
+import { useAuth } from '../lib/authContext.js'
 
 const INITIAL_VALUES = {
   donorName: '',
@@ -33,11 +34,6 @@ const INITIAL_VALUES = {
   methods: [],
 }
 
-// 목록에는 이름을 가려서 보여준다. (정수호 → 정OO)
-function maskName(name) {
-  return `${name.trim()[0]}OO`
-}
-
 export default function DonorPage() {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [submitted, setSubmitted] = useState(false)
@@ -46,6 +42,12 @@ export default function DonorPage() {
   const [checking, setChecking] = useState(false)
   const [registerStatus, setRegisterStatus] = useState('idle')
   const [registerError, setRegisterError] = useState('')
+  const { profile } = useAuth()
+  const blockedReason = !profile
+    ? '로그인한 기부자만 물품을 등록할 수 있어요.'
+    : profile.role !== 'donor'
+      ? '기부자 계정으로 로그인해야 물품을 등록할 수 있어요.'
+      : ''
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
   const errors = submitted ? validateDonor(values) : {}
@@ -97,38 +99,42 @@ export default function DonorPage() {
   }
 
   // 매칭 확인 때 제출한 값(result.submitted)을 그대로 등록한다.
-  // 사진은 작게 줄여서 함께 저장해 홈 화면과 기관 검색 결과에 보여준다.
-  // TODO(6~7차시): Supabase에 기부자·기부 물품 정보 저장 (사진은 Storage에 업로드)
+  // 사진이 있으면 줄여서 Storage에 먼저 올리고, 그 주소와 함께 DB 함수로 저장한다.
   async function handleRegister() {
     const s = result.submitted
     setRegisterStatus('saving')
     setRegisterError('')
 
-    let photo = ''
-    if (s.photo) {
-      try {
-        photo = await compressImage(s.photo)
-      } catch {
-        setRegisterError('사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 매칭을 확인해 주세요.')
-        setRegisterStatus('error')
-        return
+    try {
+      let photoUrl = ''
+      if (s.photo) {
+        let blob
+        try {
+          blob = await compressImage(s.photo)
+        } catch {
+          throw new Error('사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 매칭을 확인해 주세요.')
+        }
+        photoUrl = await uploadItemPhoto(blob)
       }
-    }
 
-    const saved = addDonorItem({
-      categories: s.categories,
-      title: s.title,
-      quantity: Number(s.quantity),
-      condition: s.condition,
-      donor: maskName(s.donorName),
-      region: s.region,
-      methods: s.methods,
-      availableUntil: s.availableUntil,
-      detail: s.detail,
-      photo,
-      registeredAt: s.registeredAt,
-    })
-    setRegisterStatus(saved ? 'done' : 'error')
+      await registerDonorItem({
+        donorName: s.donorName,
+        donorPhone: s.donorPhone,
+        title: s.title,
+        categories: s.categories,
+        quantity: Number(s.quantity),
+        condition: s.condition,
+        detail: s.detail,
+        region: s.region,
+        methods: s.methods,
+        availableUntil: s.availableUntil,
+        photoUrl,
+      })
+      setRegisterStatus('done')
+    } catch (e) {
+      setRegisterError(e.message)
+      setRegisterStatus('error')
+    }
   }
 
   return (
@@ -427,8 +433,9 @@ export default function DonorPage() {
             status={registerStatus}
             onRegister={handleRegister}
             readyHint="등록하면 기관이 필요 물품을 찾을 때 이 물품이 검색 결과에 나와요."
-            doneMessage="기부 물품을 등록했어요."
+            doneMessage="기부 물품을 데이터베이스에 등록했어요."
             errorMessage={registerError}
+            blockedReason={blockedReason}
           />
         </div>
       </div>

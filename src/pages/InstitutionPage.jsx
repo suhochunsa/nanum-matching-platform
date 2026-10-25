@@ -13,8 +13,9 @@ import { formatCategory } from '../data/categories.js'
 import { availabilityLabel } from '../data/dates.js'
 import { methodLabel, receiveGuide } from '../data/delivery.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
-import { addInstitutionNeed, loadData } from '../data/store.js'
+import { loadData, registerInstitutionNeed } from '../data/store.js'
 import { validateInstitution } from '../data/validation.js'
+import { useAuth } from '../lib/authContext.js'
 
 const INITIAL_VALUES = {
   orgName: '',
@@ -33,9 +34,20 @@ export default function InstitutionPage() {
   const [result, setResult] = useState(null)
   const [checking, setChecking] = useState(false)
   const [registerStatus, setRegisterStatus] = useState('idle')
+  const [registerError, setRegisterError] = useState('')
+  const { profile } = useAuth()
+
+  // 기관 계정으로 로그인했으면 기관명은 계정의 기관명을 쓴다. (DB도 등록할 때 계정의 기관명을 쓴다)
+  const isInstitution = profile?.role === 'institution'
+  const formValues = isInstitution ? { ...values, orgName: profile.org_name } : values
+  const blockedReason = !profile
+    ? '로그인한 기관만 필요 물품을 등록할 수 있어요.'
+    : !isInstitution
+      ? '기관 계정으로 로그인해야 필요 물품을 등록할 수 있어요.'
+      : ''
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
-  const errors = submitted ? validateInstitution(values) : {}
+  const errors = submitted ? validateInstitution(formValues) : {}
 
   function update(field) {
     return (e) => setValues((v) => ({ ...v, [field]: e.target.value }))
@@ -45,7 +57,7 @@ export default function InstitutionPage() {
     e.preventDefault()
     setSubmitted(true)
 
-    const found = validateInstitution(values)
+    const found = validateInstitution(formValues)
     const firstInvalid = Object.keys(found)[0]
     if (firstInvalid) {
       document.getElementById(firstInvalid)?.focus()
@@ -60,12 +72,12 @@ export default function InstitutionPage() {
     setResult({
       id: Date.now(),
       submitted: {
-        ...values,
+        ...formValues,
         title: values.title.trim(),
         requestedAt: new Date().toLocaleDateString('ko-KR'),
       },
       institution: {
-        name: values.orgName.trim(),
+        name: formValues.orgName.trim(),
         location: values.orgLocation.trim(),
         phone: values.orgPhone.trim(),
         hours: values.hours.trim(),
@@ -79,19 +91,21 @@ export default function InstitutionPage() {
   }
 
   // 매칭 확인 때 제출한 값을 그대로 등록한다.
-  // TODO(6~7차시): Supabase에 기관·필요 물품 정보 저장
-  function handleRegister() {
+  async function handleRegister() {
     const s = result.submitted
-    const saved = addInstitutionNeed(
-      {
-        categories: s.categories,
-        title: s.title,
-        quantity: Number(s.quantity),
-        requestedAt: s.requestedAt,
-      },
-      result.institution,
-    )
-    setRegisterStatus(saved ? 'done' : 'error')
+    setRegisterStatus('saving')
+    setRegisterError('')
+
+    try {
+      await registerInstitutionNeed(
+        { categories: s.categories, title: s.title, quantity: Number(s.quantity) },
+        result.institution,
+      )
+      setRegisterStatus('done')
+    } catch (e) {
+      setRegisterError(e.message)
+      setRegisterStatus('error')
+    }
   }
 
   return (
@@ -153,14 +167,21 @@ export default function InstitutionPage() {
           <fieldset className="space-y-4">
             <legend className="mb-3 font-semibold text-brand-800">기관 정보 입력</legend>
 
-            <FormField id="orgName" label="기관명" required error={errors.orgName}>
+            <FormField
+              id="orgName"
+              label="기관명"
+              required
+              hint={isInstitution ? '로그인한 기관 계정의 기관명이에요.' : undefined}
+              error={errors.orgName}
+            >
               <input
                 id="orgName"
                 type="text"
-                value={values.orgName}
+                value={formValues.orgName}
                 onChange={update('orgName')}
+                readOnly={isInstitution}
                 placeholder="예: 햇살보육원"
-                className={fieldClass(errors.orgName)}
+                className={`${fieldClass(errors.orgName)} read-only:bg-black/5 read-only:text-black/60`}
               />
             </FormField>
 
@@ -309,7 +330,9 @@ export default function InstitutionPage() {
             status={registerStatus}
             onRegister={handleRegister}
             readyHint="등록하면 기부자가 물품을 등록할 때 이 필요 물품이 매칭 결과에 나와요."
-            doneMessage="필요 물품을 등록했어요."
+            doneMessage="필요 물품을 데이터베이스에 등록했어요."
+            blockedReason={blockedReason}
+            errorMessage={registerError}
           />
         </div>
       </div>
