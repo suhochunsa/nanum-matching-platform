@@ -35,7 +35,11 @@ export default function RegisterButton({ status, onRegister, readyHint, doneMess
         <p className="text-center text-xs text-brand-700">
           {doneMessage}{' '}
           <Link to="/" className="font-medium underline">
-            홈에서 확인하기
+            홈에서 확인
+          </Link>
+          {' · '}
+          <Link to="/mypage" className="font-medium underline">
+            마이페이지에서 관리
           </Link>
         </p>
       )}

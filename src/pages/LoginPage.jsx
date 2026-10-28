@@ -45,8 +45,8 @@ export default function LoginPage() {
 
   useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview])
 
-  // 이미 로그인했으면 프로필 화면으로
-  if (!loading && profile) return <Navigate to="/profile" replace />
+  // 이미 로그인했으면 마이페이지로
+  if (!loading && profile) return <Navigate to="/mypage" replace />
 
   function update(field) {
     return (e) => setValues((v) => ({ ...v, [field]: e.target.value }))
@@ -89,13 +89,13 @@ export default function LoginPage() {
         switchMode('login')
         setMessage({
           tone: 'info',
-          text: `${email}로 인증 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요. 프로필 사진은 로그인 후 프로필 화면에서 올릴 수 있어요.`,
+          text: `${email}로 인증 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요. 프로필 사진은 로그인 후 마이페이지에서 올릴 수 있어요.`,
         })
         return
       }
       if (result.avatarError) {
-        // 가입은 됐지만 사진만 실패 → 프로필 화면에서 다시 올리게 안내
-        navigate('/profile', { state: { notice: `가입했어요. 다만 ${result.avatarError}` } })
+        // 가입은 됐지만 사진만 실패 → 마이페이지 프로필 탭에서 다시 올리게 안내
+        navigate('/mypage', { state: { tab: 'profile', notice: `가입했어요. 다만 ${result.avatarError}` } })
         return
       }
       navigate(HOME_OF[role])

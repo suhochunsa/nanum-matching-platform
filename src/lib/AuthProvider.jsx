@@ -76,7 +76,7 @@ export default function AuthProvider({ children }) {
   /**
    * 회원가입. 프로필은 DB 트리거가 만든다.
    * 이메일 인증이 켜져 있으면 세션이 바로 생기지 않으므로 needsEmailConfirm: true를 돌려준다.
-   * (그 경우 프로필 사진은 로그인한 뒤 프로필 화면에서 올린다)
+   * (그 경우 프로필 사진은 로그인한 뒤 마이페이지에서 올린다)
    */
   const signUp = useCallback(
     async ({ role, email, password, name, avatarFile }) => {

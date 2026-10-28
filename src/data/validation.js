@@ -92,3 +92,24 @@ export function validateInstitution(v) {
     methods: checkMethods(v.methods, '받을 수 있는 방법'),
   })
 }
+
+// 마이페이지: 기부 물품 수정 (수량·마감일)
+// 마감일을 그대로 두면(originalUntil과 같으면) 이미 지난 날짜여도 통과시킨다.
+// (만료된 물품을 '기부 완료'로 바꾸는 것처럼 다른 칸만 고칠 수 있어야 하므로)
+export function validateDonorItemEdit(v) {
+  const untilUnchanged = !v.noDeadline && v.availableUntil === v.originalUntil
+  return compact({
+    quantity: checkQuantity(v.quantity),
+    availableUntil: untilUnchanged ? undefined : checkAvailableUntil(v.availableUntil, v.noDeadline),
+  })
+}
+
+// 마이페이지: 기관 정보 수정 (기관명은 바꿀 수 없음)
+export function validateInstitutionInfo(v) {
+  return compact({
+    location: checkText(v.location, '위치', { min: 2, max: 60 }),
+    phone: checkPhone(v.phone),
+    hours: v.hours.length > 40 ? '방문 가능 시간은 40자 이하로 입력해 주세요.' : undefined,
+    methods: checkMethods(v.methods, '받을 수 있는 방법'),
+  })
+}

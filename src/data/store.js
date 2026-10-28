@@ -40,6 +40,7 @@ function toInstitutionNeed(row) {
     org: row.institutions.name,
     orgAvatar: row.institutions.owner?.avatar_url ?? '',
     requestedAt: row.requested_at,
+    status: row.status,
   }
 }
 
@@ -51,7 +52,7 @@ function toInstitution(row) {
 function friendlyError(error) {
   // DB 함수가 raise exception으로 보낸 한국어 메시지는 그대로 보여준다. (SQLSTATE P0001)
   if (error.code === 'P0001') return error.message
-  if (error.code === '42501') return '로그인이 필요해요. 다시 로그인해 주세요.'
+  if (error.code === '42501') return '이 작업을 할 권한이 없어요. 다시 로그인해 주세요.'
   if (error.code === '23514') return '입력값이 허용 범위를 벗어났어요. 입력 내용을 다시 확인해 주세요.'
   if (error.message?.includes('Failed to fetch')) return '데이터베이스에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'
   return `저장하지 못했어요. (${error.message})`
@@ -64,6 +65,7 @@ function requireClient() {
 
 /**
  * 화면에 필요한 데이터를 한 번에 불러온다.
+ * 기부 완료된 물품, 모집이 끝난 필요 물품은 빼고 불러온다. (마이페이지에서는 모두 보임)
  * @returns {Promise<{ donorItems, institutionNeeds, institutions, source: 'supabase' | 'mock', error?: string }>}
  *   source가 'mock'이면 DB 대신 예시 데이터를 쓴 것이고, error에 이유가 들어 있다.
  */
@@ -71,10 +73,15 @@ export async function loadData() {
   try {
     const db = requireClient()
     const [items, needs, orgs] = await Promise.all([
-      db.from('donor_items').select('*, owner:profiles (nickname, avatar_url)').order('created_at', { ascending: false }),
+      db
+        .from('donor_items')
+        .select('*, owner:profiles (nickname, avatar_url)')
+        .eq('status', 'available')
+        .order('created_at', { ascending: false }),
       db
         .from('institution_needs')
-        .select('id, title, categories, quantity, requested_at, institutions (name, owner:profiles (avatar_url))')
+        .select('id, title, categories, quantity, requested_at, status, institutions (name, owner:profiles (avatar_url))')
+        .eq('status', 'open')
         .order('created_at', { ascending: false }),
       db.from('institutions').select('name, location, phone, hours, methods'),
     ])
@@ -161,4 +168,87 @@ export async function uploadAvatar(userId, blob) {
   const { error } = await db.storage.from(AVATAR_BUCKET).upload(path, blob, { contentType: 'image/jpeg' })
   if (error) throw new Error(`프로필 사진을 올리지 못했어요. (${error.message})`)
   return db.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl
+}
+
+// ---------------------------------------------------------------------------
+// 마이페이지: 내 물품 관리 (DB가 주인만, 정해진 칸만 고치고 지울 수 있게 막아둠)
+
+/** 수정·삭제 결과가 0행이면 권한이 없거나 이미 지워진 것 (RLS는 오류 대신 0행을 돌려준다) */
+function ensureChanged(data, action) {
+  if (data.length === 0) throw new Error(`${action}할 권한이 없거나 이미 지워진 항목이에요.`)
+}
+
+/** 내가 올린 기부 물품 전부 (기부 완료 포함) */
+export async function fetchMyDonorItems(userId) {
+  const { data, error } = await requireClient()
+    .from('donor_items')
+    .select('*')
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(friendlyError(error))
+  return data.map(toDonorItem)
+}
+
+/** 기부 물품 수정. fields: { quantity, availableUntil, detail, status } 중 일부 */
+export async function updateDonorItem(id, fields) {
+  const row = {}
+  if ('quantity' in fields) row.quantity = fields.quantity
+  if ('availableUntil' in fields) row.available_until = fields.availableUntil
+  if ('detail' in fields) row.detail = fields.detail
+  if ('status' in fields) row.status = fields.status
+  const { data, error } = await requireClient().from('donor_items').update(row).eq('id', id).select('id')
+  if (error) throw new Error(friendlyError(error))
+  ensureChanged(data, '수정')
+}
+
+/** 기부 물품 삭제 (DB가 그 물품의 기부자 연락처도 같이 지운다) */
+export async function deleteDonorItem(id) {
+  const { data, error } = await requireClient().from('donor_items').delete().eq('id', id).select('id')
+  if (error) throw new Error(friendlyError(error))
+  ensureChanged(data, '삭제')
+}
+
+/**
+ * 내 기관 정보와 필요 물품 전부 (모집 완료 포함).
+ * 첫 필요 물품을 등록하기 전에는 기관이 아직 없어서 null.
+ */
+export async function fetchMyInstitution(userId) {
+  const { data, error } = await requireClient()
+    .from('institutions')
+    .select('id, name, location, phone, hours, methods, institution_needs (id, title, categories, quantity, status, requested_at, created_at)')
+    .eq('owner_id', userId)
+    .maybeSingle()
+  if (error) throw new Error(friendlyError(error))
+  if (!data) return null
+  const needs = [...data.institution_needs]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map((n) => ({
+      id: n.id,
+      title: n.title,
+      categories: n.categories,
+      quantity: n.quantity,
+      status: n.status,
+      requestedAt: n.requested_at,
+    }))
+  return { ...toInstitution(data), id: data.id, needs }
+}
+
+/** 필요 물품 수정. fields: { quantity, status } 중 일부 */
+export async function updateNeed(id, fields) {
+  const { data, error } = await requireClient().from('institution_needs').update(fields).eq('id', id).select('id')
+  if (error) throw new Error(friendlyError(error))
+  ensureChanged(data, '수정')
+}
+
+export async function deleteNeed(id) {
+  const { data, error } = await requireClient().from('institution_needs').delete().eq('id', id).select('id')
+  if (error) throw new Error(friendlyError(error))
+  ensureChanged(data, '삭제')
+}
+
+/** 내 기관 정보 수정. fields: { location, phone, hours, methods } (기관명은 바꿀 수 없음) */
+export async function updateMyInstitution(id, fields) {
+  const { data, error } = await requireClient().from('institutions').update(fields).eq('id', id).select('id')
+  if (error) throw new Error(friendlyError(error))
+  ensureChanged(data, '수정')
 }

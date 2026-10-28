@@ -49,9 +49,10 @@ export default function Layout() {
                   {profile.role === 'donor' ? '기부하기' : '필요 물품 등록'}
                 </Link>
                 <Link
-                  to="/profile"
+                  to="/mypage"
                   className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 hover:bg-white/10 transition-colors"
-                  aria-label="내 프로필"
+                  aria-label="마이페이지"
+                  title="마이페이지"
                 >
                   <Avatar src={profile.avatar_url} name={displayName(profile)} size="sm" />
                   <span className="hidden max-w-[9rem] truncate sm:inline">{displayName(profile)}</span>
