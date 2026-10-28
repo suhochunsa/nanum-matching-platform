@@ -23,7 +23,7 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
-      {/* 홈 화면 상단: 서비스 소개 + 기부자/기관 진입 버튼 */}
+      {/* 홈 화면 상단: 서비스 소개 (기부·등록은 로그인 후 헤더 메뉴에서) */}
       <section className="text-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-brand-800">
           기부자·기관 프로필과 크레딧으로 잇는 나눔 자동 매칭
@@ -32,27 +32,6 @@ export default function HomePage() {
           기부하고 싶은 물건의 정보를 입력하면 그 물건을 필요로 하는 기관을 찾아드리고,
           기관은 필요한 물품 조건을 입력해 현재 등록된 기부 물품을 확인할 수 있어요.
         </p>
-
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/donor"
-            className="w-full sm:w-64 rounded-xl bg-brand-600 px-6 py-4 text-white font-semibold shadow-sm hover:bg-brand-700 transition-colors"
-          >
-            기부자로 시작하기
-            <span className="block text-xs font-normal text-brand-100 mt-1">
-              나눌 물건을 등록하고 매칭받기
-            </span>
-          </Link>
-          <Link
-            to="/institution"
-            className="w-full sm:w-64 rounded-xl bg-accent-500 px-6 py-4 text-white font-semibold shadow-sm hover:bg-accent-600 transition-colors"
-          >
-            기관으로 시작하기
-            <span className="block text-xs font-normal text-white/85 mt-1">
-              필요한 물품 조건 등록하고 찾기
-            </span>
-          </Link>
-        </div>
       </section>
 
       {/* 홈 화면 하단: 기부자 등록 물품 / 기관 필요 물품 목록 (기획안 홈 화면 스케치 반영) */}
