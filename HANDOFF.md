@@ -180,6 +180,12 @@ DB 등록 (`src/data/store.js`, 임시):
 - 홈: 큰 소개 문장 + 로그인 상태별 버튼, 현황 숫자 3개, 이용 방법 3단계,
   목록은 기부 물품/필요 물품 전환 + 큰 범주 필터 + 이름 검색 + 9개씩 더 보기
 
+## 주의: 예전 마이그레이션을 다시 실행하지 말 것
+
+- 2026-10-29: `20261026010000_register_functions.sql`이 다시 실행되어 등록 함수가 로그인 없는 옛 버전으로
+  덮어써짐 → 로그인해도 주인 없이 "정OO"로 저장되는 문제. `20261029000000_restore_login_register.sql`로 복구
+- 확인 방법: 로그아웃 상태로 `rpc/register_donor_item`을 부르면 "permission denied"가 나와야 정상
+
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)
