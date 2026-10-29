@@ -8,7 +8,7 @@ import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
 import MethodPicker from '../components/MethodPicker.jsx'
 import RegisterButton from '../components/RegisterButton.jsx'
-import { fieldClass } from '../components/formStyles.js'
+import { buttonClass, fieldClass, pageTitleClass } from '../components/ui.js'
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel } from '../data/dates.js'
 import { methodLabel, receiveGuide } from '../data/delivery.js'
@@ -109,21 +109,22 @@ export default function InstitutionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      <h1 className="text-xl font-bold text-brand-800 mb-6">기관용 화면</h1>
+    <div className="mx-auto max-w-6xl px-4 pt-12 sm:px-6">
+      <h1 className={pageTitleClass}>기관용 화면</h1>
+      <p className="mt-3 max-w-2xl text-base font-light text-muted sm:text-lg">필요한 물품과 수량을 입력하면 지금 기부 가능한 물품을 점수 순으로 보여드려요. 기관 계정으로 로그인하면 바로 등록할 수 있어요.</p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[400px_1fr]">
         {/* 왼쪽: 입력 폼 */}
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-8">
           <Link
             to="/"
-            className="inline-block rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
+            className={buttonClass('soft', 'sm')}
           >
-            홈 화면으로 가기
+            ← 홈으로
           </Link>
 
           <fieldset className="space-y-4">
-            <legend className="mb-3 font-semibold text-brand-800">필요 물품 정보</legend>
+            <legend className="mb-4 text-xl font-display text-ink">필요 물품 정보</legend>
 
             <FormField id="title" label="필요 물품 이름 입력" required error={errors.title}>
               <input
@@ -165,7 +166,7 @@ export default function InstitutionPage() {
           </fieldset>
 
           <fieldset className="space-y-4">
-            <legend className="mb-3 font-semibold text-brand-800">기관 정보 입력</legend>
+            <legend className="mb-4 text-xl font-display text-ink">기관 정보 입력</legend>
 
             <FormField
               id="orgName"
@@ -181,7 +182,7 @@ export default function InstitutionPage() {
                 onChange={update('orgName')}
                 readOnly={isInstitution}
                 placeholder="예: 햇살보육원"
-                className={`${fieldClass(errors.orgName)} read-only:bg-black/5 read-only:text-black/60`}
+                className={`${fieldClass(errors.orgName)} read-only:text-muted`}
               />
             </FormField>
 
@@ -232,7 +233,7 @@ export default function InstitutionPage() {
           </fieldset>
 
           <fieldset>
-            <legend className="mb-3 font-semibold text-brand-800">수령 방법</legend>
+            <legend className="mb-4 text-xl font-display text-ink">수령 방법</legend>
             <FormField
               id="methods"
               label="받을 수 있는 방법"
@@ -253,7 +254,7 @@ export default function InstitutionPage() {
           <button
             type="submit"
             disabled={checking}
-            className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors disabled:cursor-wait disabled:opacity-70"
+            className={`${buttonClass('primary', 'lg')} w-full disabled:cursor-wait`}
           >
             {checking ? '불러오는 중…' : '일치 결과 확인하기'}
           </button>
@@ -261,11 +262,11 @@ export default function InstitutionPage() {
 
         {/* 오른쪽: 데이터베이스 내 일치 결과 */}
         <div className="flex flex-col gap-4">
-          <div className="flex-1 min-h-[320px] rounded-2xl bg-brand-700 p-6 text-white">
-            <h2 className="font-semibold mb-4">데이터베이스 내 일치 결과</h2>
+          <div className="min-h-[320px] rounded-3xl bg-canvas-soft p-6 sm:p-8">
+            <h2 className="mb-5 text-2xl font-display text-ink">지금 받을 수 있는 기부 물품</h2>
 
             {!result && (
-              <p className="text-brand-100 text-sm">
+              <p className="text-muted text-sm">
                 왼쪽 입력을 채우고 "일치 결과 확인하기"를 누르면 결과가 여기에 표시돼요.
               </p>
             )}
@@ -293,7 +294,7 @@ export default function InstitutionPage() {
 
                 {result.matches.length > 0 ? (
                   <div>
-                    <p className="text-sm text-brand-100 mb-2">
+                    <p className="text-sm text-muted mb-2">
                       조건과 잘 맞는 기부 물품 {result.matches.length}건 (점수 높은 순)
                     </p>
                     <MatchList
@@ -317,7 +318,7 @@ export default function InstitutionPage() {
                     />
                   </div>
                 ) : (
-                  <p className="text-sm text-brand-100">
+                  <p className="text-sm text-muted">
                     비슷한 물품을 등록한 기부자가 아직 없어요. 조건을 데이터베이스에
                     등록해두면 나중에 등록되는 기부 물품과 자동으로 연결돼요.
                   </p>

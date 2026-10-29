@@ -5,7 +5,7 @@ import { formatDate } from '../../data/dates.js'
 import { NEED_STATUS, NEED_STATUS_CHOICES } from '../../data/status.js'
 import { deleteNeed, fetchMyInstitution, updateNeed } from '../../data/store.js'
 import FormField from '../FormField.jsx'
-import { fieldClass } from '../formStyles.js'
+import { buttonClass, fieldClass } from '../ui.js'
 import ManagedRow from './ManagedRow.jsx'
 import StatusBadge from './StatusBadge.jsx'
 
@@ -25,15 +25,15 @@ export default function MyNeeds({ userId }) {
   }, [userId])
 
   if (loadError) return <p className="text-sm text-red-600">필요 물품을 불러오지 못했어요. ({loadError})</p>
-  if (!needs) return <p className="text-sm text-black/45">불러오는 중…</p>
+  if (!needs) return <p className="text-sm text-muted">불러오는 중…</p>
 
   if (needs.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-black/10 bg-white px-6 py-10 text-center">
-        <p className="text-black/60">아직 등록한 필요 물품이 없어요.</p>
+      <div className="rounded-3xl bg-canvas-soft px-6 py-14 text-center">
+        <p className="text-muted">아직 등록한 필요 물품이 없어요.</p>
         <Link
           to="/institution"
-          className="mt-4 inline-block rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+          className={`${buttonClass('primary', 'md')} mt-5`}
         >
           필요 물품 등록하기
         </Link>
@@ -51,13 +51,13 @@ export default function MyNeeds({ userId }) {
     <div className="space-y-4">
       <dl className="grid grid-cols-3 gap-2 text-center">
         {stats.map(([label, n]) => (
-          <div key={label} className="rounded-lg bg-white px-2 py-2.5 shadow-sm">
-            <dt className="text-xs text-black/50">{label}</dt>
-            <dd className="text-lg font-bold tabular-nums text-brand-800">{n}</dd>
+          <div key={label} className="rounded-2xl bg-canvas-soft px-3 py-4">
+            <dt className="text-xs text-muted">{label}</dt>
+            <dd className="mt-1 text-3xl font-display tabular-nums text-ink">{n}</dd>
           </div>
         ))}
       </dl>
-      <p className="text-xs text-black/45">모집 완료로 바꾼 필요 물품은 홈 화면과 기부자 매칭 결과에서 빠져요.</p>
+      <p className="text-xs text-muted">모집 완료로 바꾼 필요 물품은 홈 화면과 기부자 매칭 결과에서 빠져요.</p>
 
       <ul className="space-y-3">
         {needs.map((need) => (
@@ -81,11 +81,11 @@ export default function MyNeeds({ userId }) {
             view={
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold leading-snug">{need.title}</h3>
+                  <h3 className="font-display leading-snug text-ink">{need.title}</h3>
                   <StatusBadge label={NEED_STATUS[need.status]} tone={need.status === 'open' ? 'active' : 'done'} />
                 </div>
-                <p className="mt-0.5 text-xs text-black/50">{need.categories.map(formatCategory).join(', ')}</p>
-                <p className="mt-1 text-sm text-black/65">
+                <p className="mt-0.5 text-xs text-muted">{need.categories.map(formatCategory).join(', ')}</p>
+                <p className="mt-1 text-sm text-muted">
                   필요 수량 {need.quantity} · 요청일 {formatDate(need.requestedAt)}
                 </p>
               </div>
@@ -150,13 +150,13 @@ function NeedEditor({ need, onSaved, onCancel }) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} disabled={busy} className="rounded-md px-3 py-1.5 text-sm text-black/60 hover:bg-black/5">
+        <button type="button" onClick={onCancel} disabled={busy} className={buttonClass('ghost', 'sm')}>
           취소
         </button>
         <button
           type="submit"
           disabled={busy || Boolean(quantityError)}
-          className="rounded-md bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+          className={buttonClass('primary', 'sm')}
         >
           {busy ? '저장하는 중…' : '저장'}
         </button>

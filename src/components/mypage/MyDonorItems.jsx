@@ -6,7 +6,7 @@ import { ITEM_STATUS, ITEM_STATUS_CHOICES } from '../../data/status.js'
 import { deleteDonorItem, fetchMyDonorItems, updateDonorItem } from '../../data/store.js'
 import { validateDonorItemEdit } from '../../data/validation.js'
 import FormField from '../FormField.jsx'
-import { fieldClass } from '../formStyles.js'
+import { buttonClass, fieldClass } from '../ui.js'
 import PhotoThumb from '../PhotoThumb.jsx'
 import ManagedRow from './ManagedRow.jsx'
 import StatusBadge from './StatusBadge.jsx'
@@ -33,13 +33,13 @@ export default function MyDonorItems({ userId }) {
   }, [userId])
 
   if (loadError) return <p className="text-sm text-red-600">물품을 불러오지 못했어요. ({loadError})</p>
-  if (!items) return <p className="text-sm text-black/45">불러오는 중…</p>
+  if (!items) return <p className="text-sm text-muted">불러오는 중…</p>
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-black/10 bg-white px-6 py-10 text-center">
-        <p className="text-black/60">아직 등록한 기부 물품이 없어요.</p>
-        <Link to="/donor" className="mt-4 inline-block rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
+      <div className="rounded-3xl bg-canvas-soft px-6 py-14 text-center">
+        <p className="text-muted">아직 등록한 기부 물품이 없어요.</p>
+        <Link to="/donor" className={`${buttonClass('primary', 'md')} mt-5`}>
           기부 물품 등록하기
         </Link>
       </div>
@@ -58,13 +58,13 @@ export default function MyDonorItems({ userId }) {
     <div className="space-y-4">
       <dl className="grid grid-cols-4 gap-2 text-center">
         {stats.map(([label, n]) => (
-          <div key={label} className="rounded-lg bg-white px-2 py-2.5 shadow-sm">
-            <dt className="text-xs text-black/50">{label}</dt>
-            <dd className="text-lg font-bold tabular-nums text-brand-800">{n}</dd>
+          <div key={label} className="rounded-2xl bg-canvas-soft px-3 py-4">
+            <dt className="text-xs text-muted">{label}</dt>
+            <dd className="mt-1 text-3xl font-display tabular-nums text-ink">{n}</dd>
           </div>
         ))}
       </dl>
-      <p className="text-xs text-black/45">기부 완료로 바꾼 물품은 홈 화면과 기관 검색 결과에서 빠져요.</p>
+      <p className="text-xs text-muted">기부 완료로 바꾼 물품은 홈 화면과 기관 검색 결과에서 빠져요.</p>
 
       <ul className="space-y-3">
         {items.map((item) => {
@@ -92,11 +92,11 @@ export default function MyDonorItems({ userId }) {
                   <PhotoThumb src={item.photo} alt={item.title} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold leading-snug">{item.title}</h3>
+                      <h3 className="font-display leading-snug text-ink">{item.title}</h3>
                       <StatusBadge {...badge} />
                     </div>
-                    <p className="mt-0.5 text-xs text-black/50">{item.categories.map(formatCategory).join(', ')}</p>
-                    <p className="mt-1 text-sm text-black/65">
+                    <p className="mt-0.5 text-xs text-muted">{item.categories.map(formatCategory).join(', ')}</p>
+                    <p className="mt-1 text-sm text-muted">
                       수량 {item.quantity} · {item.condition} · 기부 가능: {availabilityLabel(item.availableUntil)}
                     </p>
                   </div>
@@ -185,14 +185,14 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
             value={form.availableUntil}
             onChange={(e) => setForm((f) => ({ ...f, availableUntil: e.target.value }))}
             disabled={form.noDeadline}
-            className={`${fieldClass(errors.availableUntil)} disabled:bg-black/5 disabled:text-black/35`}
+            className={`${fieldClass(errors.availableUntil)} disabled:opacity-40`}
           />
-          <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-black/70">
+          <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-semibold text-ink">
             <input
               type="checkbox"
               checked={form.noDeadline}
               onChange={(e) => setForm((f) => ({ ...f, noDeadline: e.target.checked }))}
-              className="h-4 w-4 accent-brand-600"
+              className="h-4 w-4 accent-ink"
             />
             기한 없음
           </label>
@@ -202,13 +202,13 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} disabled={busy} className="rounded-md px-3 py-1.5 text-sm text-black/60 hover:bg-black/5">
+        <button type="button" onClick={onCancel} disabled={busy} className={buttonClass('ghost', 'sm')}>
           취소
         </button>
         <button
           type="submit"
           disabled={busy}
-          className="rounded-md bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+          className={buttonClass('primary', 'sm')}
         >
           {busy ? '저장하는 중…' : '저장'}
         </button>

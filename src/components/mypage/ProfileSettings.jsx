@@ -5,19 +5,18 @@ import { fetchMyInstitution, updateMyInstitution, updateMyProfile, uploadAvatar 
 import { validateInstitutionInfo } from '../../data/validation.js'
 import { useAuth } from '../../lib/authContext.js'
 import FormField from '../FormField.jsx'
-import { fieldClass } from '../formStyles.js'
+import { buttonClass, fieldClass } from '../ui.js'
 import MethodPicker from '../MethodPicker.jsx'
 
-const primaryButton =
-  'rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors disabled:opacity-50'
+const primaryButton = buttonClass('primary', 'md')
 
 function Message({ message }) {
   if (!message) return null
   return (
     <p
       role={message.tone === 'error' ? 'alert' : 'status'}
-      className={`rounded-lg px-3 py-2.5 text-sm ${
-        message.tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-800'
+      className={`rounded-2xl px-4 py-3 text-sm ${
+        message.tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-canvas-soft text-ink'
       }`}
     >
       {message.text}
@@ -79,12 +78,10 @@ export default function ProfileSettings({ initialNotice }) {
       <Message message={message} />
 
       <section className="space-y-3">
-        <h2 className="font-semibold text-brand-800">프로필 사진</h2>
-        <p className="text-sm text-black/55">홈 화면에서 내가 올린 물품 오른쪽 아래에 작게 보여요.</p>
+        <h2 className="text-xl font-display text-ink">프로필 사진</h2>
+        <p className="text-sm text-muted">홈 화면에서 내가 올린 물품 오른쪽 아래에 작게 보여요.</p>
         <label
-          className={`inline-block cursor-pointer rounded-lg border border-brand-300 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors ${
-            busy === 'photo' ? 'pointer-events-none opacity-60' : ''
-          }`}
+          className={`${buttonClass('outline', 'md')} cursor-pointer ${busy === 'photo' ? 'pointer-events-none opacity-40' : ''}`}
         >
           {busy === 'photo' ? '올리는 중…' : '사진 바꾸기'}
           <input type="file" accept="image/*" className="sr-only" onChange={handlePhoto} />
@@ -93,7 +90,7 @@ export default function ProfileSettings({ initialNotice }) {
 
       {profile.role === 'donor' ? (
         <form onSubmit={handleNickname} noValidate className="space-y-3">
-          <h2 className="font-semibold text-brand-800">닉네임</h2>
+          <h2 className="text-xl font-display text-ink">닉네임</h2>
           <FormField id="nickname" label="닉네임" hint="다른 사람에게 보이는 이름이에요. (2~20자)">
             <input
               id="nickname"
@@ -172,16 +169,16 @@ function InstitutionInfoForm({ userId, orgName }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="font-semibold text-brand-800">기관 정보</h2>
-      <p className="text-sm text-black/55">기관명: {orgName} (가입 후에는 바꿀 수 없어요)</p>
+      <h2 className="text-xl font-display text-ink">기관 정보</h2>
+      <p className="text-sm text-muted">기관명: {orgName} (가입 후에는 바꿀 수 없어요)</p>
       <Message message={message} />
 
-      {inst === undefined && !message && <p className="text-sm text-black/45">불러오는 중…</p>}
+      {inst === undefined && !message && <p className="text-sm text-muted">불러오는 중…</p>}
 
       {inst === null && (
-        <p className="rounded-lg bg-white px-4 py-3 text-sm text-black/60 shadow-sm">
+        <p className="rounded-2xl bg-canvas-soft px-4 py-3 text-sm text-muted">
           아직 기관 정보가 없어요.{' '}
-          <Link to="/institution" className="text-brand-600 underline">
+          <Link to="/institution" className="font-semibold text-ink underline underline-offset-2">
             첫 필요 물품을 등록
           </Link>
           하면 그때 입력한 위치·연락처로 만들어져요.

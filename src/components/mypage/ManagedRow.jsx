@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { buttonClass } from '../ui.js'
 
 /**
  * 마이페이지 목록의 한 줄. 보기 → [수정] / [삭제] → 삭제 확인을 관리한다.
@@ -22,34 +23,32 @@ export default function ManagedRow({ view, renderEditor, onDelete, name }) {
     }
   }
 
-  const button = 'rounded-md px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50'
-
   return (
-    <li className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+    <li className="rounded-3xl border border-hairline-soft bg-canvas p-5">
       {view}
 
-      {mode === 'edit' && <div className="mt-3 border-t border-black/5 pt-3">{renderEditor(() => setMode('view'))}</div>}
+      {mode === 'edit' && <div className="mt-4 border-t border-hairline-soft pt-4">{renderEditor(() => setMode('view'))}</div>}
 
       {mode === 'confirm' && (
-        <div role="alertdialog" aria-label="삭제 확인" className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-red-50 px-3 py-2.5">
+        <div role="alertdialog" aria-label="삭제 확인" className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-red-50 px-4 py-3">
           <p className="mr-auto text-sm text-red-700">
             <strong>{name}</strong> 항목을 삭제할까요? 되돌릴 수 없어요.
           </p>
-          <button type="button" onClick={handleDelete} disabled={busy} className={`${button} bg-red-600 text-white hover:bg-red-700`}>
+          <button type="button" onClick={handleDelete} disabled={busy} className={buttonClass('danger', 'sm')}>
             {busy ? '삭제하는 중…' : '삭제'}
           </button>
-          <button type="button" onClick={() => setMode('view')} disabled={busy} className={`${button} text-black/60 hover:bg-black/5`}>
+          <button type="button" onClick={() => setMode('view')} disabled={busy} className={buttonClass('ghost', 'sm')}>
             취소
           </button>
         </div>
       )}
 
       {mode === 'view' && (
-        <div className="mt-3 flex justify-end gap-2">
-          <button type="button" onClick={() => setMode('edit')} className={`${button} border border-brand-300 text-brand-700 hover:bg-brand-50`}>
+        <div className="mt-4 flex justify-end gap-1.5">
+          <button type="button" onClick={() => setMode('edit')} className={buttonClass('outline', 'sm')}>
             수정
           </button>
-          <button type="button" onClick={() => setMode('confirm')} className={`${button} text-red-600 hover:bg-red-50`}>
+          <button type="button" onClick={() => setMode('confirm')} className={buttonClass('danger-ghost', 'sm')}>
             삭제
           </button>
         </div>

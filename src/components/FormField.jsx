@@ -2,15 +2,15 @@
 export default function FormField({ id, label, required, hint, error, children }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-black/70 mb-1">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-ink">
         {label}
-        {required && <span className="ml-0.5 text-accent-600">*</span>}
+        {required && <span className="ml-0.5 text-muted">*</span>}
       </label>
       {children}
       {error ? (
-        <p className="mt-1 text-xs text-red-600">{error}</p>
+        <p className="mt-1.5 text-xs text-red-600">{error}</p>
       ) : (
-        hint && <p className="mt-1 text-xs text-black/45">{hint}</p>
+        hint && <p className="mt-1.5 text-xs text-muted">{hint}</p>
       )}
     </div>
   )

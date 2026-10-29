@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PhotoThumb from './PhotoThumb.jsx'
+import { buttonClass } from './ui.js'
 
 const PAGE_SIZE = 10
 
@@ -36,23 +37,24 @@ export default function MatchList({ matches, primary, secondary, detailLabel, re
         {matches.slice(0, visible).map((m, i) => {
           const isOpen = openIds.has(m.id)
           return (
-            <li key={m.id} className="rounded-lg bg-white/10 px-3 py-2.5 text-sm">
+            <li key={m.id} className="rounded-2xl bg-canvas px-4 py-3.5 text-sm">
               <div className="flex items-start gap-3">
-                {photo && <PhotoThumb src={photo(m)} alt={primary(m)} tone="dark" />}
+                {photo && <PhotoThumb src={photo(m)} alt={primary(m)} />}
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">
-                    <span className="mr-2 text-brand-200">{i + 1}</span>
+                  <p className="font-semibold text-ink">
+                    <span className="mr-2 tabular-nums text-faint">{i + 1}</span>
                     {primary(m)}
                   </p>
-                  <p className="mt-0.5 text-brand-100">{secondary(m)}</p>
+                  <p className="mt-0.5 text-muted">{secondary(m)}</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-accent-500 px-2.5 py-1 text-xs font-semibold text-white">
+                {/* 매칭 점수: 화면에서 유일하게 파란색을 쓰는 "결정 신호" */}
+                <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold tabular-nums text-white">
                   {m.score}점
                 </span>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-brand-100">
+              <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
                 {SCORE_CHIPS.map(([key, label]) => (
-                  <span key={key} className="rounded bg-white/10 px-1.5 py-0.5">
+                  <span key={key} className="rounded-full bg-canvas-soft px-2 py-0.5 tabular-nums">
                     {label} {Math.round(m.breakdown[key] * 100)}%
                   </span>
                 ))}
@@ -61,7 +63,7 @@ export default function MatchList({ matches, primary, secondary, detailLabel, re
                     type="button"
                     onClick={() => toggleDetail(m.id)}
                     aria-expanded={isOpen}
-                    className="ml-auto rounded-md bg-white/15 px-2.5 py-1 text-xs font-medium text-white hover:bg-white/25 transition-colors"
+                    className="ml-auto rounded-full bg-canvas-soft px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-field"
                   >
                     {detailLabel} {isOpen ? '▴' : '▾'}
                   </button>
@@ -77,7 +79,7 @@ export default function MatchList({ matches, primary, secondary, detailLabel, re
         <button
           type="button"
           onClick={() => setVisible((v) => v + PAGE_SIZE)}
-          className="mt-3 w-full rounded-lg bg-white/15 py-2 text-sm font-medium hover:bg-white/25 transition-colors"
+          className={`${buttonClass('outline', 'md')} mt-3 w-full`}
         >
           더보기 ({remaining}개 남음)
         </button>

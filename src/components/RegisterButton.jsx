@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { buttonClass } from './ui.js'
 
 /**
  * 결과 화면 아래 "데이터베이스에 등록하기" 버튼.
@@ -14,31 +15,31 @@ export default function RegisterButton({ status, onRegister, readyHint, doneMess
         type="button"
         onClick={onRegister}
         disabled={status !== 'ready' || blocked}
-        className="w-full rounded-xl bg-brand-100 py-3 text-sm font-semibold text-brand-800 hover:bg-brand-200 transition-colors disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-brand-100"
+        className={`${buttonClass('primary', 'lg')} w-full`}
       >
         {status === 'done' ? '등록 완료 ✓' : status === 'saving' ? '등록하는 중…' : '데이터베이스에 등록하기'}
       </button>
 
       {status === 'idle' && (
-        <p className="text-center text-xs text-black/45">먼저 매칭 결과를 확인하면 등록할 수 있어요.</p>
+        <p className="text-center text-xs text-muted">먼저 매칭 결과를 확인하면 등록할 수 있어요.</p>
       )}
       {blocked && (
-        <p className="text-center text-xs text-black/60">
+        <p className="text-center text-xs text-muted">
           {blockedReason}{' '}
-          <Link to="/login" className="font-medium text-brand-600 underline">
+          <Link to="/login" className="font-semibold text-ink underline">
             로그인하기
           </Link>
         </p>
       )}
-      {status === 'ready' && !blocked && <p className="text-center text-xs text-black/50">{readyHint}</p>}
+      {status === 'ready' && !blocked && <p className="text-center text-xs text-muted">{readyHint}</p>}
       {status === 'done' && (
-        <p className="text-center text-xs text-brand-700">
+        <p className="text-center text-xs text-ink">
           {doneMessage}{' '}
-          <Link to="/" className="font-medium underline">
+          <Link to="/" className="font-semibold underline">
             홈에서 확인
           </Link>
           {' · '}
-          <Link to="/mypage" className="font-medium underline">
+          <Link to="/mypage" className="font-semibold underline">
             마이페이지에서 관리
           </Link>
         </p>

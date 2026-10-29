@@ -168,6 +168,18 @@ DB 등록 (`src/data/store.js`, 임시):
 - PGlite로 22가지 경우 검증 (남의 물품·기관 수정/삭제 0행, 허용 안 된 칸 거부, 로그아웃 거부)
 - `/profile`은 `/mypage`로 이동 (ProfilePage는 mypage/ProfileSettings로 옮김)
 
+## 디자인 (DESIGN-mobbin.md 기반)
+
+- 토큰은 `src/index.css`의 `@theme`: ink #141414, canvas #fff, canvas-soft #f3f3f3, field #f0f0f0,
+  hairline #e0e0e0, accent #0066ff. 글꼴 Pretendard Variable(제목 650, 본문 450, 부제 300)
+- 공통 스타일은 `src/components/ui.js`: `buttonClass(variant, size)`(전부 알약), `fieldClass`(테두리 없는 회색 칸,
+  포커스 시 2px 잉크 링), `chipClass`, `pageTitleClass`
+- 규칙: 그림자 없이 회색 단계·1px 옅은 테두리로 구분 / 카드 24px(rounded-3xl), 입력·사진 16px(rounded-2xl)
+  / 파란 accent는 매칭 점수·마감 임박에만, 빨강은 만료·오류에만
+- 떠 있는 알약 메뉴(sticky), 위가 둥근 잉크 푸터, 로고는 잉크 스쿼클(30%) '나'
+- 홈: 큰 소개 문장 + 로그인 상태별 버튼, 현황 숫자 3개, 이용 방법 3단계,
+  목록은 기부 물품/필요 물품 전환 + 큰 범주 필터 + 이름 검색 + 9개씩 더 보기
+
 ## 다음 단계 (계획서의 차시별 개발 계획 기준)
 
 - [x] 1차시: GitHub 저장소 개설 — 완료 (suhochunsa/nanum-matching-platform, private)

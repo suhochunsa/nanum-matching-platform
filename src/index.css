@@ -1,27 +1,47 @@
 @import "tailwindcss";
 
+/*
+ * 디자인 토큰 (DESIGN-mobbin.md 기반)
+ * - 흰 캔버스 위 거의 검은 잉크, 그림자 대신 옅은 회색 단계로 위계를 만든다.
+ * - 버튼·뱃지·탭은 전부 알약(rounded-full), 입력칸·사진은 16px(rounded-2xl), 카드는 24px(rounded-3xl).
+ * - 파란 accent는 매칭 점수·마감 임박처럼 "결정이 필요한 신호"에만 쓴다. 빨강은 만료·오류에만.
+ */
 @theme {
-  --font-sans: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-  --color-brand-50: #eef6f8;
-  --color-brand-100: #d3e9ee;
-  --color-brand-200: #a7d3dd;
-  --color-brand-300: #72b6c6;
-  --color-brand-400: #3f93a9;
-  --color-brand-500: #1f7690;
-  --color-brand-600: #185d74;
-  --color-brand-700: #14495c;
-  --color-brand-800: #123c4c;
-  --color-brand-900: #0f2f3c;
-  --color-accent-500: #e8935a;
-  --color-accent-600: #d6793d;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif;
+
+  /* 가변 글꼴의 무게: 제목 650, 본문 450 (300은 기본 font-light) */
+  --font-weight-display: 650;
+  --font-weight-text: 450;
+
+  --color-ink: #141414;
+  --color-ink-soft: #262626;
+  --color-muted: #707070;
+  --color-faint: #adadad;
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #f3f3f3;
+  --color-field: #f0f0f0;
+  --color-hairline: #e0e0e0;
+  --color-hairline-soft: #f0f0f0;
+  --color-accent: #0066ff;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #f6f8f9;
-  color: #14232a;
+  font-weight: var(--font-weight-text);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 키보드로 이동할 때 보이는 포커스 링도 잉크색으로 */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
 }

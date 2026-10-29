@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar.jsx'
 import FormField from '../components/FormField.jsx'
-import { fieldClass } from '../components/formStyles.js'
+import { buttonClass, fieldClass } from '../components/ui.js'
 import { ROLE_LABEL, ROLE_LABEL_RO, useAuth } from '../lib/authContext.js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -109,14 +109,18 @@ export default function LoginPage() {
   const nameLabel = role === 'donor' ? '닉네임' : '기관명'
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-14">
-      <h1 className="text-xl font-bold text-brand-800 text-center mb-8">
-        {mode === 'login' ? '로그인' : '회원가입'}
+    <div className="mx-auto max-w-md px-4 pt-14">
+      <h1 className="text-center text-4xl font-display leading-tight text-ink">
+        {mode === 'login' ? '다시 만나서 반가워요.' : '나눔을 시작해요.'}
       </h1>
+      <p className="mt-3 text-center font-light text-muted">
+        {mode === 'login' ? '기부자 또는 기관 계정으로 로그인하세요.' : '기부자인지 기관인지 먼저 골라 주세요.'}
+      </p>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      {/* 인증 카드: 옅은 테두리의 흰 카드 안에 회색 입력칸 */}
+      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5 rounded-3xl border border-hairline-soft p-6 sm:p-8">
         {/* 기부자 / 기관 선택 */}
-        <div role="radiogroup" aria-label="계정 종류" className="grid grid-cols-2 gap-2 rounded-lg bg-brand-50 p-1">
+        <div role="radiogroup" aria-label="계정 종류" className="grid grid-cols-2 gap-1 rounded-full bg-canvas-soft p-1">
           {['donor', 'institution'].map((r) => (
             <button
               key={r}
@@ -124,8 +128,8 @@ export default function LoginPage() {
               role="radio"
               aria-checked={role === r}
               onClick={() => setRole(r)}
-              className={`rounded-md py-2 text-sm font-medium transition-colors ${
-                role === r ? 'bg-brand-600 text-white shadow-sm' : 'text-brand-700 hover:bg-brand-100'
+              className={`rounded-full py-2.5 text-sm font-semibold transition-colors ${
+                role === r ? 'bg-canvas text-ink shadow-sm' : 'text-muted hover:text-ink'
               }`}
             >
               {ROLE_LABEL[r]}
@@ -136,8 +140,8 @@ export default function LoginPage() {
         {message && (
           <p
             role={message.tone === 'error' ? 'alert' : 'status'}
-            className={`rounded-lg px-3 py-2.5 text-sm ${
-              message.tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-800'
+            className={`rounded-2xl px-4 py-3 text-sm ${
+              message.tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-canvas-soft text-ink'
             }`}
           >
             {message.text}
@@ -152,7 +156,7 @@ export default function LoginPage() {
               hint="선택 · 홈 화면에서 내가 올린 물품 옆에 작게 보여요."
               error={errors.avatar}
             >
-              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-brand-300 bg-brand-50 px-3 py-2.5 text-sm text-brand-700 hover:bg-brand-100 transition-colors">
+              <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-field px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-hairline">
                 <Avatar src={preview} name={values.name || ROLE_LABEL[role]} size="sm" />
                 {values.avatar?.name || '사진 고르기'}
                 <input id="avatar" type="file" accept="image/*" className="sr-only" onChange={handleAvatar} />
@@ -223,17 +227,17 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-lg bg-brand-600 py-2.5 text-white font-semibold hover:bg-brand-700 transition-colors disabled:cursor-wait disabled:opacity-70"
+          className={`${buttonClass('primary', 'lg')} w-full disabled:cursor-wait`}
         >
           {busy ? '처리하는 중…' : mode === 'login' ? `${ROLE_LABEL_RO[role]} 로그인` : `${ROLE_LABEL_RO[role]} 가입하기`}
         </button>
 
-        <p className="text-center text-sm text-black/55">
+        <p className="text-center text-sm text-muted">
           {mode === 'login' ? '아직 계정이 없나요?' : '이미 계정이 있나요?'}{' '}
           <button
             type="button"
             onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-            className="font-medium text-brand-600 hover:underline"
+            className="font-semibold text-ink underline underline-offset-2"
           >
             {mode === 'login' ? '회원가입' : '로그인'}
           </button>

@@ -34,26 +34,26 @@ export default function CategoryTree({ id, value, onChange, error }) {
     <div
       id={id}
       tabIndex={-1}
-      className={`rounded-lg border bg-white text-sm focus:outline-none focus:ring-2 ${
-        error ? 'border-red-400 focus:ring-red-300' : 'border-black/10 focus:ring-brand-400'
+      className={`overflow-hidden rounded-2xl bg-field text-sm focus:outline-none ${
+        error ? 'ring-2 ring-red-500' : 'focus:ring-2 focus:ring-ink'
       }`}
     >
       {/* 선택한 항목 요약: × 로 바로 뺄 수 있다 */}
-      <div className="flex min-h-11 flex-wrap items-center gap-1.5 border-b border-black/5 px-3 py-2">
+      <div className="flex min-h-12 flex-wrap items-center gap-1.5 border-b border-hairline px-4 py-2.5">
         {value.length === 0 ? (
-          <span className="text-black/40">아래에서 범주를 하나 이상 골라 주세요</span>
+          <span className="text-faint">아래에서 범주를 하나 이상 골라 주세요</span>
         ) : (
           value.map((leaf) => (
             <span
               key={leaf}
-              className="inline-flex items-center gap-1 rounded-full bg-brand-500/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-brand-700"
+              className="inline-flex items-center gap-1 rounded-full bg-ink py-1 pl-3 pr-1 text-xs font-semibold text-white"
             >
               {formatCategory(leaf)}
               <button
                 type="button"
                 onClick={() => toggleLeaf(leaf)}
                 aria-label={`${formatCategory(leaf)} 선택 해제`}
-                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-brand-500/20"
+                className="flex h-4 w-4 items-center justify-center rounded-full hover:bg-white/20"
               >
                 ×
               </button>
@@ -62,7 +62,7 @@ export default function CategoryTree({ id, value, onChange, error }) {
         )}
       </div>
 
-      <ul className="divide-y divide-black/5">
+      <ul className="divide-y divide-hairline">
         {CATEGORY_TREE.map((group) => {
           const leaves = group.children.map((child) => leafId(group.name, child))
           const count = leaves.filter((l) => selected.has(l)).length
@@ -70,7 +70,7 @@ export default function CategoryTree({ id, value, onChange, error }) {
 
           return (
             <li key={group.name}>
-              <div className="flex items-center gap-2.5 px-3 py-2">
+              <div className="flex items-center gap-3 px-4 py-2.5">
                 <input
                   type="checkbox"
                   checked={count === leaves.length}
@@ -79,7 +79,7 @@ export default function CategoryTree({ id, value, onChange, error }) {
                   }}
                   onChange={() => toggleGroup(group.name, leaves)}
                   aria-label={`${group.name} 전체 선택`}
-                  className="h-4 w-4 accent-brand-600"
+                  className="h-4 w-4 accent-ink"
                 />
                 <button
                   type="button"
@@ -88,15 +88,15 @@ export default function CategoryTree({ id, value, onChange, error }) {
                   className="flex flex-1 items-center justify-between text-left"
                 >
                   <span className="font-medium">{group.name}</span>
-                  <span className="flex items-center gap-2 text-xs text-black/45">
-                    {count > 0 && <span className="text-brand-600">{count}개 선택</span>}
+                  <span className="flex items-center gap-2 text-xs text-muted">
+                    {count > 0 && <span className="font-semibold text-ink">{count}개 선택</span>}
                     <span className={`inline-block transition-transform ${isOpen ? 'rotate-90' : ''}`}>▸</span>
                   </span>
                 </button>
               </div>
 
               {isOpen && (
-                <div className="mb-2.5 ml-[1.1rem] mr-3 flex flex-wrap gap-1.5 border-l-2 border-brand-200 pl-3">
+                <div className="mb-3 ml-[1.35rem] mr-4 flex flex-wrap gap-1.5 border-l-2 border-hairline pl-3">
                   {group.children.map((child) => {
                     const leaf = leafId(group.name, child)
                     const on = selected.has(leaf)
@@ -106,10 +106,10 @@ export default function CategoryTree({ id, value, onChange, error }) {
                         type="button"
                         onClick={() => toggleLeaf(leaf)}
                         aria-pressed={on}
-                        className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                           on
-                            ? 'border-brand-600 bg-brand-600 text-white'
-                            : 'border-black/10 text-black/70 hover:border-brand-300 hover:bg-brand-50'
+                            ? 'border-ink bg-ink text-white'
+                            : 'border-hairline bg-canvas text-ink hover:border-ink'
                         }`}
                       >
                         {on && '✓ '}

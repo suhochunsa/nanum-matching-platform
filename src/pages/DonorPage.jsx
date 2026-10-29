@@ -8,7 +8,7 @@ import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
 import MethodPicker from '../components/MethodPicker.jsx'
 import RegisterButton from '../components/RegisterButton.jsx'
-import { fieldClass } from '../components/formStyles.js'
+import { buttonClass, fieldClass, pageTitleClass } from '../components/ui.js'
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel, todayString } from '../data/dates.js'
 import { donationGuide, methodLabel } from '../data/delivery.js'
@@ -138,21 +138,22 @@ export default function DonorPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      <h1 className="text-xl font-bold text-brand-800 mb-6">기부자 신청</h1>
+    <div className="mx-auto max-w-6xl px-4 pt-12 sm:px-6">
+      <h1 className={pageTitleClass}>기부자 신청</h1>
+      <p className="mt-3 max-w-2xl text-base font-light text-muted sm:text-lg">나눌 물건의 정보를 입력하면 그 물건을 찾는 기관을 점수 순으로 보여드려요. 로그인하면 바로 등록할 수 있어요.</p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[400px_1fr]">
         {/* 왼쪽: 입력 폼 */}
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-8">
           <Link
             to="/"
-            className="inline-block rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
+            className={buttonClass('soft', 'sm')}
           >
-            홈으로 가기
+            ← 홈으로
           </Link>
 
           <fieldset className="space-y-4">
-            <legend className="mb-3 font-semibold text-brand-800">기부자 정보</legend>
+            <legend className="mb-4 text-xl font-display text-ink">기부자 정보</legend>
 
             <FormField id="donorName" label="이름" required error={errors.donorName}>
               <input
@@ -202,7 +203,7 @@ export default function DonorPage() {
           </fieldset>
 
           <fieldset className="space-y-4">
-            <legend className="mb-3 font-semibold text-brand-800">물품 정보</legend>
+            <legend className="mb-4 text-xl font-display text-ink">물품 정보</legend>
 
             <FormField
               id="photo"
@@ -211,10 +212,8 @@ export default function DonorPage() {
               error={errors.photo}
             >
               <label
-                className={`flex h-36 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed text-sm transition-colors ${
-                  errors.photo
-                    ? 'border-red-400 bg-red-50 text-red-600'
-                    : 'border-brand-300 bg-brand-50 text-brand-600 hover:bg-brand-100'
+                className={`flex h-40 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-field text-sm font-semibold transition-colors ${
+                  errors.photo ? 'text-red-600 ring-2 ring-red-500' : 'text-muted hover:bg-hairline'
                 }`}
               >
                 {preview ? (
@@ -296,14 +295,14 @@ export default function DonorPage() {
                   value={values.availableUntil}
                   onChange={update('availableUntil')}
                   disabled={values.noDeadline}
-                  className={`${fieldClass(errors.availableUntil)} disabled:bg-black/5 disabled:text-black/35`}
+                  className={`${fieldClass(errors.availableUntil)} disabled:opacity-40`}
                 />
-                <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm text-black/70">
+                <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-semibold text-ink">
                   <input
                     type="checkbox"
                     checked={values.noDeadline}
                     onChange={(e) => setValues((v) => ({ ...v, noDeadline: e.target.checked }))}
-                    className="h-4 w-4 accent-brand-600"
+                    className="h-4 w-4 accent-ink"
                   />
                   기한 없음
                 </label>
@@ -328,7 +327,7 @@ export default function DonorPage() {
           </fieldset>
 
           <fieldset>
-            <legend className="mb-3 font-semibold text-brand-800">전달 방법</legend>
+            <legend className="mb-4 text-xl font-display text-ink">전달 방법</legend>
             <FormField
               id="methods"
               label="가능한 전달 방법"
@@ -349,7 +348,7 @@ export default function DonorPage() {
           <button
             type="submit"
             disabled={checking}
-            className="w-full rounded-lg bg-accent-500 py-2.5 text-white font-semibold hover:bg-accent-600 transition-colors disabled:cursor-wait disabled:opacity-70"
+            className={`${buttonClass('primary', 'lg')} w-full disabled:cursor-wait`}
           >
             {checking ? '불러오는 중…' : '매칭 확인하기'}
           </button>
@@ -357,11 +356,11 @@ export default function DonorPage() {
 
         {/* 오른쪽: 매칭 결과 · 예상 적립 크레딧 화면 */}
         <div className="flex flex-col gap-4">
-          <div className="flex-1 min-h-[320px] rounded-2xl bg-brand-700 p-6 text-white">
-            <h2 className="font-semibold mb-4">매칭 결과, 예상 적립 크레딧 화면</h2>
+          <div className="min-h-[320px] rounded-3xl bg-canvas-soft p-6 sm:p-8">
+            <h2 className="mb-5 text-2xl font-display text-ink">매칭 결과</h2>
 
             {!result && (
-              <p className="text-brand-100 text-sm">
+              <p className="text-muted text-sm">
                 왼쪽 입력을 채우고 "매칭 확인하기"를 누르면 결과가 여기에 표시돼요.
               </p>
             )}
@@ -389,14 +388,14 @@ export default function DonorPage() {
                   ]}
                 />
 
-                <div className="rounded-xl bg-white/10 px-4 py-3">
-                  <p className="text-sm text-brand-100">이번 기부로 예상되는 적립 크레딧</p>
-                  <p className="text-2xl font-bold">{result.estimatedCredit} 크레딧</p>
+                <div className="rounded-2xl bg-ink px-5 py-4 text-white">
+                  <p className="text-sm text-faint">이번 기부로 예상되는 적립 크레딧</p>
+                  <p className="mt-1 text-4xl font-display tabular-nums">{result.estimatedCredit} 크레딧</p>
                 </div>
 
                 {result.matches.length > 0 ? (
                   <div>
-                    <p className="text-sm text-brand-100 mb-2">
+                    <p className="text-sm text-muted mb-2">
                       이 물품과 잘 맞는 기관 필요 물품 {result.matches.length}건 (점수 높은 순)
                     </p>
                     <MatchList
@@ -420,7 +419,7 @@ export default function DonorPage() {
                     />
                   </div>
                 ) : (
-                  <p className="text-sm text-brand-100">
+                  <p className="text-sm text-muted">
                     비슷한 물품을 필요로 하는 기관이 아직 없어요. 아래 버튼으로 데이터베이스에
                     등록해두면 나중에 필요한 기관과 자동으로 연결돼요.
                   </p>
