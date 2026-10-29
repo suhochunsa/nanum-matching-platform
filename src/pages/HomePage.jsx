@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import DataNotice from '../components/DataNotice.jsx'
+import HeroParallax from '../components/HeroParallax.jsx'
 import ItemCard from '../components/ItemCard.jsx'
 import { buttonClass } from '../components/ui.js'
 import { CATEGORY_TREE, parentOf } from '../data/categories.js'
@@ -90,31 +90,11 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      {/* 소개 */}
-      <section className="pt-16 pb-14 text-center sm:pt-24">
-        <p className="inline-flex rounded-full bg-canvas-soft px-3 py-1 text-xs font-semibold text-muted">
-          기부자 · 기관 자동 매칭
-        </p>
-        <h1 className="mx-auto mt-6 max-w-3xl text-5xl font-display leading-[1.05] text-ink sm:text-6xl">
-          남는 물건을
-          <br />
-          필요한 곳으로.
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg font-light leading-relaxed text-muted sm:text-xl">
-          물건 정보를 입력하면 그 물건을 찾는 기관을, 필요한 물품을 입력하면 지금 기부 가능한 물품을 바로 찾아드려요.
-        </p>
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-2">
-          <Link to={primaryAction[0]} className={buttonClass('primary', 'lg')}>
-            {primaryAction[1]}
-          </Link>
-          <a href="#list" className={buttonClass('soft', 'lg')}>
-            물품 둘러보기
-          </a>
-        </div>
-      </section>
+      {/* 소개: 사진 배경 + 패럴랙스 스크롤 */}
+      <HeroParallax primaryAction={primaryAction} />
 
       {/* 숫자로 보는 현황 */}
-      <section aria-label="현황" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section aria-label="현황" className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {stats.map(([label, n]) => (
           <div key={label} className="rounded-3xl bg-canvas-soft px-6 py-7">
             <p className="text-5xl font-display leading-none tabular-nums text-ink">{data ? n : '–'}</p>

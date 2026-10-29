@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <!-- 임시 배경 일러스트: 해 질 녘 마을에서 상자를 건네받는 가족. 실제 사진으로 바꿀 때까지 사용 -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6d6a8"/>
+      <stop offset="0.55" stop-color="#f0a86a"/>
+      <stop offset="1" stop-color="#d9714e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <circle cx="1180" cy="330" r="150" fill="#fbe7c2" opacity="0.9"/>
+  <!-- 먼 언덕과 집들 -->
+  <path d="M0 640 Q300 560 620 620 T1260 600 T1600 610 L1600 1000 L0 1000 Z" fill="#c4614a"/>
+  <g fill="#a94f3d">
+    <rect x="120" y="520" width="150" height="130"/><path d="M105 525 L195 455 L285 525 Z"/>
+    <rect x="1320" y="500" width="170" height="140"/><path d="M1300 505 L1405 425 L1510 505 Z"/>
+  </g>
+  <g fill="#fbe7c2"><rect x="165" y="565" width="34" height="34"/><rect x="1385" y="545" width="38" height="38"/></g>
+  <!-- 가까운 땅 -->
+  <path d="M0 760 Q400 700 800 740 T1600 730 L1600 1000 L0 1000 Z" fill="#8f3f31"/>
+  <!-- 사람들 (실루엣) -->
+  <g fill="#3a1f1a">
+    <!-- 건네는 사람 -->
+    <circle cx="560" cy="470" r="44"/>
+    <path d="M500 525 Q560 500 620 525 L640 760 L480 760 Z"/>
+    <path d="M610 560 L700 600 L690 625 L600 590 Z"/>
+    <!-- 받는 어른 -->
+    <circle cx="930" cy="470" r="44"/>
+    <path d="M870 525 Q930 500 990 525 L1010 760 L850 760 Z"/>
+    <path d="M880 560 L790 600 L800 625 L890 590 Z"/>
+    <!-- 아이 -->
+    <circle cx="1080" cy="585" r="34"/>
+    <path d="M1035 628 Q1080 610 1125 628 L1138 760 L1022 760 Z"/>
+    <path d="M1040 650 L985 690 L998 708 L1050 672 Z"/>
+  </g>
+  <!-- 상자와 하트 -->
+  <rect x="690" y="560" width="110" height="85" rx="8" fill="#f2c14e"/>
+  <rect x="738" y="560" width="14" height="85" fill="#d9a43a"/>
+  <path d="M745 470 C725 440 680 455 690 490 C698 515 745 535 745 535 C745 535 792 515 800 490 C810 455 765 440 745 470 Z" fill="#fbe7c2"/>
+</svg>
