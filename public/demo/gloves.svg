@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <rect width="640" height="640" fill="#eaf1ef"/>
+  <!-- 목도리 -->
+  <path d="M120 200 Q320 140 520 200 L520 270 Q320 210 120 270 Z" fill="#2f7d6d"/>
+  <path d="M380 235 L440 245 L430 470 L370 460 Z" fill="#2f7d6d"/>
+  <g stroke="#e9c46a" stroke-width="12"><line x1="378" y1="300" x2="437" y2="310"/><line x1="374" y1="380" x2="433" y2="390"/></g>
+  <g stroke="#2f7d6d" stroke-width="8" stroke-linecap="round"><line x1="380" y1="470" x2="376" y2="505"/><line x1="400" y1="472" x2="398" y2="508"/><line x1="420" y1="474" x2="420" y2="510"/></g>
+  <!-- 장갑 -->
+  <path d="M170 520 L170 360 Q170 300 225 300 Q280 300 280 360 L280 520 Z" fill="#e9c46a"/>
+  <path d="M170 420 Q120 400 130 360 Q145 335 175 360 Z" fill="#e9c46a"/>
+  <rect x="165" y="490" width="120" height="44" rx="10" fill="#d8a93c"/>
+</svg>

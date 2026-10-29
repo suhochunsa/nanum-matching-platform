@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <rect width="640" height="640" fill="#eef0ea"/>
+  <!-- 상판 -->
+  <path d="M110 260 L530 260 L560 310 L80 310 Z" fill="#b58658"/>
+  <rect x="80" y="310" width="480" height="28" fill="#8f6640"/>
+  <!-- 다리 (접이식 X자) -->
+  <g stroke="#505a63" stroke-width="18" stroke-linecap="round">
+    <line x1="140" y1="338" x2="260" y2="520"/><line x1="260" y1="338" x2="140" y2="520"/>
+    <line x1="380" y1="338" x2="500" y2="520"/><line x1="500" y1="338" x2="380" y2="520"/>
+  </g>
+  <!-- 책상 위 물건 -->
+  <rect x="380" y="205" width="90" height="55" rx="6" fill="#3d6fa8"/>
+  <rect x="170" y="225" width="120" height="35" rx="6" fill="#ffffff" stroke="#141414" stroke-width="5"/>
+</svg>

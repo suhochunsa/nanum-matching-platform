@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <rect width="640" height="640" fill="#fbf0dc"/>
+  <!-- 컵 -->
+  <path d="M190 230 L450 230 L415 520 Q320 540 225 520 Z" fill="#ffffff" stroke="#141414" stroke-width="8"/>
+  <path d="M200 300 L440 300 L432 365 L208 365 Z" fill="#e0483e"/>
+  <text x="320" y="350" text-anchor="middle" font-family="sans-serif" font-size="46" font-weight="800" fill="#ffffff">라면</text>
+  <!-- 뚜껑 -->
+  <rect x="170" y="200" width="300" height="40" rx="14" fill="#f2c14e" stroke="#141414" stroke-width="8"/>
+  <!-- 김 -->
+  <g stroke="#adadad" stroke-width="10" fill="none" stroke-linecap="round">
+    <path d="M260 170 Q240 140 260 110 Q280 80 260 50"/><path d="M320 170 Q300 140 320 110 Q340 80 320 50"/>
+    <path d="M380 170 Q360 140 380 110 Q400 80 380 50"/>
+  </g>
+  <!-- 면 -->
+  <g stroke="#e8b96a" stroke-width="9" fill="none" stroke-linecap="round">
+    <path d="M240 420 q20 -20 40 0 t40 0 t40 0 t40 0"/><path d="M245 460 q20 -20 40 0 t40 0 t40 0 t40 0"/>
+  </g>
+</svg>

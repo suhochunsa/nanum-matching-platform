@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <rect width="640" height="640" fill="#f3efe6"/>
+  <rect x="150" y="410" width="340" height="60" rx="8" fill="#4e7d5b"/>
+  <rect x="150" y="410" width="30" height="60" fill="#3c6247"/>
+  <rect x="170" y="345" width="320" height="60" rx="8" fill="#d9734e"/>
+  <rect x="170" y="345" width="30" height="60" fill="#b85d3d"/>
+  <rect x="140" y="280" width="330" height="60" rx="8" fill="#3d6fa8"/>
+  <rect x="140" y="280" width="30" height="60" fill="#2f5986"/>
+  <!-- 맨 위 펼친 책 -->
+  <path d="M320 250 Q250 205 170 220 L170 160 Q250 145 320 190 Z" fill="#ffffff" stroke="#141414" stroke-width="6"/>
+  <path d="M320 250 Q390 205 470 220 L470 160 Q390 145 320 190 Z" fill="#ffffff" stroke="#141414" stroke-width="6"/>
+  <g stroke="#adadad" stroke-width="5" stroke-linecap="round">
+    <line x1="200" y1="185" x2="290" y2="200"/><line x1="350" y1="200" x2="440" y2="185"/>
+    <line x1="200" y1="205" x2="280" y2="218"/><line x1="360" y1="218" x2="440" y2="205"/>
+  </g>
+  <text x="320" y="530" text-anchor="middle" font-family="sans-serif" font-size="44" font-weight="700" fill="#141414">1+1=2</text>
+</svg>

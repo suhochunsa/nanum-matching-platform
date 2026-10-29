@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <rect width="640" height="640" fill="#e8eef5"/>
+  <!-- 소매 -->
+  <path d="M190 230 Q130 260 120 420 L175 430 Q190 330 215 300 Z" fill="#2f4a6d"/>
+  <path d="M450 230 Q510 260 520 420 L465 430 Q450 330 425 300 Z" fill="#2f4a6d"/>
+  <!-- 몸통 -->
+  <path d="M215 200 Q320 170 425 200 L440 470 Q320 495 200 470 Z" fill="#3b5b85"/>
+  <!-- 누빔 선 -->
+  <g stroke="#2f4a6d" stroke-width="10" stroke-linecap="round" fill="none">
+    <path d="M212 260 Q320 280 430 260"/><path d="M208 320 Q320 340 434 320"/>
+    <path d="M205 380 Q320 400 437 380"/><path d="M203 440 Q320 460 439 440"/>
+  </g>
+  <!-- 지퍼 -->
+  <line x1="320" y1="205" x2="320" y2="485" stroke="#e8eef5" stroke-width="8"/>
+  <!-- 모자(후드) -->
+  <path d="M245 205 Q320 110 395 205 Q320 230 245 205 Z" fill="#2f4a6d"/>
+  <path d="M270 200 Q320 150 370 200" stroke="#f2c14e" stroke-width="12" fill="none" stroke-linecap="round"/>
+</svg>
