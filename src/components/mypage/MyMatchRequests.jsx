@@ -101,8 +101,13 @@ export default function MyMatchRequests({ requests, reload }) {
                   <p className="mt-1 text-sm text-muted">{row.incoming ? '보낸 계정' : '받는 계정'}: {row.other_name}</p>
                   <p className="text-xs text-muted">기관의 필요 물품: {row.need_title}</p>
                 </div>
-                <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${row.status === 'completed' ? 'bg-ink text-white' : 'bg-canvas-soft'}`}>
-                  {LABELS[row.status] ?? row.status}
+                <span className="flex shrink-0 flex-col items-end gap-1">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${row.status === 'completed' ? 'bg-ink text-white' : 'bg-canvas-soft'}`}>
+                    {LABELS[row.status] ?? row.status}
+                  </span>
+                  {(myTurn || (row.incoming && row.status === 'requested')) && (
+                    <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-white">내 차례</span>
+                  )}
                 </span>
               </div>
               <p className="text-sm text-muted">
@@ -122,6 +127,13 @@ export default function MyMatchRequests({ requests, reload }) {
                 {row.completed_at && ` · 최종 완료: ${dateLabel(row.completed_at)}`}
               </p>
 
+              {row.status === 'requested' && (
+                <p className="text-xs text-muted">
+                  {row.incoming
+                    ? '수락하면 매칭이 확정되고, 그다음에 전달 완료를 누를 수 있어요.'
+                    : '상대방이 수락하면 매칭이 확정되고, 그다음에 전달 완료를 누를 수 있어요.'}
+                </p>
+              )}
               {row.status === 'requested' && (
                 <div className="flex gap-2">
                   {row.incoming ? (
@@ -149,7 +161,9 @@ export default function MyMatchRequests({ requests, reload }) {
               {row.status === 'confirmed' && confirming === row.id && (
                 <div role="alertdialog" aria-label="전달 완료 확인" className="flex flex-wrap items-center gap-2 rounded-2xl bg-canvas-soft px-4 py-3">
                   <p className="mr-auto text-sm">
-                    {row.my_side === 'donor' ? '물품을 기관에 전달했나요?' : '물품을 받았나요?'} 누르면 되돌릴 수 없어요.
+                    <strong>{row.item_title}</strong>
+                    {row.my_side === 'donor' ? `을(를) ${row.other_name}에 전달했나요?` : `을(를) ${row.other_name}에게서 받았나요?`}{' '}
+                    누르면 되돌릴 수 없어요.
                   </p>
                   <button type="button" disabled={Boolean(busy)} onClick={() => complete(row.id)} className={buttonClass('primary', 'sm')}>
                     {busy === row.id ? '처리 중…' : '네, 전달 완료'}
