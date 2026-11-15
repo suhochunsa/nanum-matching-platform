@@ -9,7 +9,8 @@ function authErrorMessage(error) {
   const msg = error?.message ?? ''
   if (msg.includes('Invalid login credentials')) return '이메일 또는 비밀번호가 맞지 않아요.'
   if (msg.includes('Email not confirmed')) return '이메일 인증이 아직 안 됐어요. 메일함의 인증 링크를 먼저 눌러 주세요.'
-  if (msg.includes('User already registered')) return '이미 가입된 이메일이에요. 로그인해 주세요.'
+  if (['user_already_exists', 'email_exists'].includes(error?.code) || msg.includes('User already registered'))
+    return '이미 가입된 이메일이에요. 기존 비밀번호로 로그인해 주세요.'
   if (msg.includes('Password should be')) return '비밀번호가 너무 짧거나 쉬워요. 8자 이상으로 정해 주세요.'
   if (msg.includes('rate limit')) return '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
   // 프로필을 만드는 DB 트리거가 실패한 경우 (대부분 이미 쓰는 기관명)
@@ -88,6 +89,11 @@ export default function AuthProvider({ children }) {
         options: { data: meta, emailRedirectTo: `${window.location.origin}/login` },
       })
       if (error) throw new Error(authErrorMessage(error))
+      // 기존 인증 계정은 오류 대신 identities가 빈 가짜 사용자로 반환될 수 있다.
+      // 이를 새 가입으로 처리하면 인증 메일이 발송됐다고 잘못 안내하게 된다.
+      if (data.user?.identities?.length === 0) {
+        throw new Error('이미 가입된 이메일이에요. 기존 비밀번호로 로그인해 주세요.')
+      }
       if (!data.session) return { needsEmailConfirm: true }
 
       let avatarError = ''

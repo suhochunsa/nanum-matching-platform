@@ -51,12 +51,13 @@ export default function MyDonorItems({ userId }) {
     ['전체', items.length],
     ['기부 가능', count((i) => i.status === 'available' && !isExpired(i.availableUntil))],
     ['기간 만료', count((i) => i.status === 'available' && isExpired(i.availableUntil))],
+    ['매칭 확정', count((i) => i.status === 'matched')],
     ['기부 완료', count((i) => i.status === 'donated')],
   ]
 
   return (
     <div className="space-y-4">
-      <dl className="grid grid-cols-4 gap-2 text-center">
+      <dl className="grid grid-cols-2 gap-2 text-center sm:grid-cols-5">
         {stats.map(([label, n]) => (
           <div key={label} className="rounded-2xl bg-canvas-soft px-3 py-4">
             <dt className="text-xs text-muted">{label}</dt>
@@ -155,6 +156,7 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
             min="1"
             max="999"
             value={form.quantity}
+            disabled={item.lockedForMatch}
             onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             className={fieldClass(errors.quantity)}
           />
@@ -166,8 +168,8 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
             onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
             className={fieldClass()}
           >
-            {/* '매칭됨' 상태인 물품이면 그 값도 고를 수 있게 남겨둔다 */}
-            {[...new Set([...ITEM_STATUS_CHOICES, item.status])].map((s) => (
+            {/* 매칭된 물품은 양쪽 전달 완료로만 기부 완료가 되므로 지금 상태만 보여준다 */}
+            {(item.lockedForMatch ? [item.status] : [...new Set([...ITEM_STATUS_CHOICES, item.status])]).map((s) => (
               <option key={s} value={s}>
                 {ITEM_STATUS[s]}
               </option>
@@ -201,6 +203,11 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+      {item.lockedForMatch && (
+        <p className="text-xs text-muted">
+          매칭이 확정된 물품은 수량과 상태를 바꿀 수 없어요. 기부자와 기관이 매칭 요청함에서 모두 '전달 완료'를 누르면 기부 완료가 돼요.
+        </p>
+      )}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} disabled={busy} className={buttonClass('ghost', 'sm')}>
           취소

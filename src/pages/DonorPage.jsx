@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
 import DataNotice from '../components/DataNotice.jsx'
@@ -6,6 +6,7 @@ import FormField from '../components/FormField.jsx'
 import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
+import MatchRequestAction from '../components/MatchRequestAction.jsx'
 import MethodPicker from '../components/MethodPicker.jsx'
 import RegisterButton from '../components/RegisterButton.jsx'
 import { buttonClass, fieldClass, pageTitleClass } from '../components/ui.js'
@@ -15,7 +16,7 @@ import { donationGuide, methodLabel } from '../data/delivery.js'
 import { compressImage } from '../data/image.js'
 import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
-import { loadData, registerDonorItem, uploadItemPhoto } from '../data/store.js'
+import { loadData, registerDonorItem, requestItemMatch, uploadItemPhoto } from '../data/store.js'
 import { MAX_DETAIL_LENGTH, MAX_PHOTO_MB, validateDonor } from '../data/validation.js'
 import { useAuth } from '../lib/authContext.js'
 
@@ -43,6 +44,7 @@ export default function DonorPage() {
   const [registerStatus, setRegisterStatus] = useState('idle')
   const [registerError, setRegisterError] = useState('')
   const { profile } = useAuth()
+  const registration = useRef(null)
   const blockedReason = !profile
     ? '로그인한 기부자만 물품을 등록할 수 있어요.'
     : profile.role !== 'donor'
@@ -67,6 +69,7 @@ export default function DonorPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (checking || registerStatus === 'saving') return
     setSubmitted(true)
 
     const found = validateDonor(values)
@@ -81,7 +84,9 @@ export default function DonorPage() {
     const data = await loadData()
     setChecking(false)
 
+    registration.current = null
     setResult({
+      itemId: null,
       id: Date.now(),
       submitted: {
         ...values,
@@ -101,40 +106,38 @@ export default function DonorPage() {
   // 매칭 확인 때 제출한 값(result.submitted)을 그대로 등록한다.
   // 사진이 있으면 줄여서 Storage에 먼저 올리고, 그 주소와 함께 DB 함수로 저장한다.
   async function handleRegister() {
-    const s = result.submitted
-    setRegisterStatus('saving')
-    setRegisterError('')
-
-    try {
+    if (result.itemId) return result.itemId
+    if (registration.current?.resultId === result.id) return registration.current.promise
+    const snapshot = result
+    const save = async () => {
+      const s = snapshot.submitted
+      setRegisterStatus('saving')
+      setRegisterError('')
       let photoUrl = ''
       if (s.photo) {
         let blob
-        try {
-          blob = await compressImage(s.photo)
-        } catch {
-          throw new Error('사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 매칭을 확인해 주세요.')
-        }
+        try { blob = await compressImage(s.photo) }
+        catch { throw new Error('사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.') }
         photoUrl = await uploadItemPhoto(blob)
       }
-
-      await registerDonorItem({
-        donorName: s.donorName,
-        donorPhone: s.donorPhone,
-        title: s.title,
-        categories: s.categories,
-        quantity: Number(s.quantity),
-        condition: s.condition,
-        detail: s.detail,
-        region: s.region,
-        methods: s.methods,
-        availableUntil: s.availableUntil,
-        photoUrl,
+      const itemId = await registerDonorItem({
+        donorName: s.donorName, donorPhone: s.donorPhone, title: s.title,
+        categories: s.categories, quantity: Number(s.quantity), condition: s.condition,
+        detail: s.detail, region: s.region, methods: s.methods,
+        availableUntil: s.availableUntil, photoUrl,
       })
+      setResult((current) => current?.id === snapshot.id ? { ...current, itemId } : current)
       setRegisterStatus('done')
-    } catch (e) {
-      setRegisterError(e.message)
-      setRegisterStatus('error')
+      return itemId
     }
+    const promise = save().catch((error) => {
+      setRegisterError(error.message)
+      setRegisterStatus('error')
+      registration.current = null
+      throw error
+    })
+    registration.current = { resultId: result.id, promise }
+    return promise
   }
 
   return (
@@ -170,7 +173,7 @@ export default function DonorPage() {
               id="donorPhone"
               label="연락처"
               required
-              hint="매칭된 기관이 연락할 번호예요."
+              hint="로그인한 기관이 매칭 결과에서 이 번호를 보고 연락할 수 있어요."
               error={errors.donorPhone}
             >
               <input
@@ -347,7 +350,7 @@ export default function DonorPage() {
 
           <button
             type="submit"
-            disabled={checking}
+            disabled={checking || registerStatus === 'saving'}
             className={`${buttonClass('primary', 'lg')} w-full disabled:cursor-wait`}
           >
             {checking ? '불러오는 중…' : '매칭 확인하기'}
@@ -389,7 +392,7 @@ export default function DonorPage() {
                 />
 
                 <div className="rounded-2xl bg-ink px-5 py-4 text-white">
-                  <p className="text-sm text-faint">이번 기부로 예상되는 적립 크레딧</p>
+                  <p className="text-sm text-faint">전달이 최종 완료되면 적립될 예상 크레딧</p>
                   <p className="mt-1 text-4xl font-display tabular-nums">{result.estimatedCredit} 크레딧</p>
                 </div>
 
@@ -403,6 +406,12 @@ export default function DonorPage() {
                       matches={result.matches}
                       primary={(m) => `${m.org} · ${m.title}`}
                       secondary={(m) => `${m.categories.map(formatCategory).join(', ')} · 필요 수량 ${m.quantity}`}
+                      renderAction={(m) => (
+                        <MatchRequestAction source={result.source} allowed={profile?.role === 'donor'} targetOwnerId={m.ownerId}
+                          myMethods={result.submitted.methods} otherMethods={m.institution?.methods ?? []}
+                          quantity={Number(result.submitted.quantity)}
+                          onRequest={async (method) => requestItemMatch(await handleRegister(), m.id, method)} />
+                      )}
                       detailLabel="기부 방법 보기"
                       renderDetail={(m) =>
                         m.institution ? (
@@ -430,7 +439,7 @@ export default function DonorPage() {
 
           <RegisterButton
             status={registerStatus}
-            onRegister={handleRegister}
+            onRegister={() => handleRegister().catch(() => {})}
             readyHint="등록하면 기관이 필요 물품을 찾을 때 이 물품이 검색 결과에 나와요."
             doneMessage="기부 물품을 데이터베이스에 등록했어요."
             errorMessage={registerError}

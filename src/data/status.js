@@ -11,6 +11,12 @@ export const NEED_STATUS = {
   fulfilled: '모집 완료',
 }
 
-// 마이페이지에서 사용자가 직접 고를 수 있는 상태 ('매칭됨'은 8차시 매칭 기능에서 쓸 예정)
+// 매칭됨은 요청 수락 시, 기부 완료는 기부자·기관이 모두 전달 완료를 누를 때 DB가 지정한다.
+// 매칭과 상관없는 물품만 사용자가 직접 기부 완료로 바꿀 수 있다.
 export const ITEM_STATUS_CHOICES = ['available', 'donated']
 export const NEED_STATUS_CHOICES = ['open', 'fulfilled']
+
+/** 확정된 매칭에서 내가 아직 전달 완료를 누르지 않았는지 (요청함 행 기준) */
+export function needsMyCompletion(row) {
+  return row.status === 'confirmed' && !(row.my_side === 'donor' ? row.donor_done : row.institution_done)
+}

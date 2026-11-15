@@ -7,14 +7,15 @@ import { buttonClass } from './ui.js'
  * blockedReason: 등록할 수 없는 이유(로그인 안 함, 다른 역할 계정 등). 있으면 버튼을 막고 로그인 링크를 보여준다.
  */
 export default function RegisterButton({ status, onRegister, readyHint, doneMessage, errorMessage, blockedReason }) {
-  const blocked = status === 'ready' && Boolean(blockedReason)
+  const canRegister = status === 'ready' || status === 'error'
+  const blocked = canRegister && Boolean(blockedReason)
 
   return (
     <div className="space-y-2">
       <button
         type="button"
         onClick={onRegister}
-        disabled={status !== 'ready' || blocked}
+        disabled={!canRegister || blocked}
         className={`${buttonClass('primary', 'lg')} w-full`}
       >
         {status === 'done' ? '등록 완료 ✓' : status === 'saving' ? '등록하는 중…' : '데이터베이스에 등록하기'}

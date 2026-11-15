@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
 import DataNotice from '../components/DataNotice.jsx'
+import DonorContact from '../components/DonorContact.jsx'
 import FormField from '../components/FormField.jsx'
 import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
+import MatchRequestAction from '../components/MatchRequestAction.jsx'
 import MethodPicker from '../components/MethodPicker.jsx'
 import RegisterButton from '../components/RegisterButton.jsx'
 import { buttonClass, fieldClass, pageTitleClass } from '../components/ui.js'
@@ -13,7 +15,7 @@ import { formatCategory } from '../data/categories.js'
 import { availabilityLabel } from '../data/dates.js'
 import { methodLabel, receiveGuide } from '../data/delivery.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
-import { loadData, registerInstitutionNeed } from '../data/store.js'
+import { loadData, registerMatchingNeed, requestItemMatch } from '../data/store.js'
 import { validateInstitution } from '../data/validation.js'
 import { useAuth } from '../lib/authContext.js'
 
@@ -36,6 +38,7 @@ export default function InstitutionPage() {
   const [registerStatus, setRegisterStatus] = useState('idle')
   const [registerError, setRegisterError] = useState('')
   const { profile } = useAuth()
+  const registration = useRef(null)
 
   // 기관 계정으로 로그인했으면 기관명은 계정의 기관명을 쓴다. (DB도 등록할 때 계정의 기관명을 쓴다)
   const isInstitution = profile?.role === 'institution'
@@ -55,6 +58,7 @@ export default function InstitutionPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (checking || registerStatus === 'saving') return
     setSubmitted(true)
 
     const found = validateInstitution(formValues)
@@ -66,10 +70,35 @@ export default function InstitutionPage() {
 
     // 매칭할 때마다 DB에서 최신 목록을 불러온다.
     setChecking(true)
+    setRegisterStatus('saving')
     const data = await loadData()
+    const institution = {
+      name: formValues.orgName.trim(),
+      location: values.orgLocation.trim(),
+      phone: values.orgPhone.trim(),
+      hours: values.hours.trim(),
+      methods: [...values.methods],
+    }
+    const need = { categories: [...values.categories], title: values.title.trim(), quantity: Number(values.quantity) }
+    let needId = null
+    setRegisterError('')
+    // 실제 저장한 내 필요 물품과의 매칭만 DB에서 연락처 조회를 허용한다.
+    if (isInstitution && data.source === 'supabase') {
+      try {
+        needId = await registerMatchingNeed(need, institution, profile.id)
+        setRegisterStatus('done')
+      } catch (error) {
+        setRegisterError(error.message)
+        setRegisterStatus('error')
+      }
+    } else {
+      setRegisterStatus('ready')
+    }
     setChecking(false)
 
+    registration.current = null
     setResult({
+      needId,
       id: Date.now(),
       submitted: {
         ...formValues,
@@ -87,25 +116,32 @@ export default function InstitutionPage() {
       source: data.source,
       sourceError: data.error,
     })
-    setRegisterStatus('ready')
   }
 
   // 매칭 확인 때 제출한 값을 그대로 등록한다.
   async function handleRegister() {
-    const s = result.submitted
-    setRegisterStatus('saving')
-    setRegisterError('')
-
-    try {
-      await registerInstitutionNeed(
-        { categories: s.categories, title: s.title, quantity: Number(s.quantity) },
-        result.institution,
+    if (result.needId) return result.needId
+    if (registration.current?.resultId === result.id) return registration.current.promise
+    const snapshot = result
+    const save = async () => {
+      const s = snapshot.submitted
+      setRegisterStatus('saving')
+      setRegisterError('')
+      const needId = await registerMatchingNeed(
+        { categories: s.categories, title: s.title, quantity: Number(s.quantity) }, snapshot.institution, profile.id,
       )
+      setResult((current) => current?.id === snapshot.id ? { ...current, needId } : current)
       setRegisterStatus('done')
-    } catch (e) {
-      setRegisterError(e.message)
-      setRegisterStatus('error')
+      return needId
     }
+    const promise = save().catch((error) => {
+      setRegisterError(error.message)
+      setRegisterStatus('error')
+      registration.current = null
+      throw error
+    })
+    registration.current = { resultId: result.id, promise }
+    return promise
   }
 
   return (
@@ -253,11 +289,12 @@ export default function InstitutionPage() {
 
           <button
             type="submit"
-            disabled={checking}
+            disabled={checking || registerStatus === 'saving'}
             className={`${buttonClass('primary', 'lg')} w-full disabled:cursor-wait`}
           >
             {checking ? '불러오는 중…' : '일치 결과 확인하기'}
           </button>
+          {isInstitution && <p className="text-xs text-muted">확인하면 필요 물품을 함께 등록하고, 매칭된 기부자의 연락처를 바로 보여드려요.</p>}
         </form>
 
         {/* 오른쪽: 데이터베이스 내 일치 결과 */}
@@ -305,6 +342,14 @@ export default function InstitutionPage() {
                         `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition} · 기부 가능 ${availabilityLabel(m.availableUntil)}`
                       }
                       photo={(m) => m.photo}
+                      renderContact={(m) => (
+                        <DonorContact key={`${m.id}-${result.needId ?? ''}-${profile?.id ?? 'guest'}`} itemId={m.id} needId={result.needId} source={result.source} profile={profile} />
+                      )}
+                      renderAction={(m) => (
+                        <MatchRequestAction source={result.source} allowed={isInstitution} targetOwnerId={m.ownerId}
+                          myMethods={result.institution.methods} otherMethods={m.methods} quantity={m.quantity}
+                          onRequest={async (method) => requestItemMatch(m.id, await handleRegister(), method)} />
+                      )}
                       detailLabel="수령 방법 보기"
                       renderDetail={(m) => (
                         <GuideBox
@@ -312,7 +357,6 @@ export default function InstitutionPage() {
                           fallback={`기부자가 가능한 방법(${m.methods
                             .map(methodLabel)
                             .join(', ')})과 받을 수 있는 방법이 겹치지 않아요.`}
-                          note="기부자 연락처는 매칭이 확정되면 공개돼요."
                         />
                       )}
                     />
@@ -329,7 +373,7 @@ export default function InstitutionPage() {
 
           <RegisterButton
             status={registerStatus}
-            onRegister={handleRegister}
+            onRegister={() => handleRegister().catch(() => {})}
             readyHint="등록하면 기부자가 물품을 등록할 때 이 필요 물품이 매칭 결과에 나와요."
             doneMessage="필요 물품을 데이터베이스에 등록했어요."
             blockedReason={blockedReason}

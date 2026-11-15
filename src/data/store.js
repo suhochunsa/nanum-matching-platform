@@ -15,6 +15,8 @@ const AVATAR_BUCKET = 'avatars'
 function toDonorItem(row) {
   return {
     id: row.id,
+    ownerId: row.owner_id,
+    lockedForMatch: Boolean(row.matching_credit_entries?.length) || (row.matches?.some((match) => ['confirmed', 'completed'].includes(match.status)) ?? false),
     categories: row.categories,
     title: row.title,
     quantity: row.quantity,
@@ -34,6 +36,7 @@ function toDonorItem(row) {
 function toInstitutionNeed(row) {
   return {
     id: row.id,
+    ownerId: row.institutions.owner_id,
     categories: row.categories,
     title: row.title,
     quantity: row.quantity,
@@ -80,7 +83,7 @@ export async function loadData() {
         .order('created_at', { ascending: false }),
       db
         .from('institution_needs')
-        .select('id, title, categories, quantity, requested_at, status, institutions (name, owner:profiles (avatar_url))')
+        .select('id, title, categories, quantity, requested_at, status, institutions (name, owner_id, owner:profiles (avatar_url))')
         .eq('status', 'open')
         .order('created_at', { ascending: false }),
       db.from('institutions').select('name, location, phone, hours, methods'),
@@ -182,7 +185,7 @@ function ensureChanged(data, action) {
 export async function fetchMyDonorItems(userId) {
   const { data, error } = await requireClient()
     .from('donor_items')
-    .select('*')
+    .select('*, matches (status), matching_credit_entries (id)')
     .eq('owner_id', userId)
     .order('created_at', { ascending: false })
   if (error) throw new Error(friendlyError(error))
@@ -251,4 +254,54 @@ export async function updateMyInstitution(id, fields) {
   const { data, error } = await requireClient().from('institutions').update(fields).eq('id', id).select('id')
   if (error) throw new Error(friendlyError(error))
   ensureChanged(data, '수정')
+}
+
+/** DB가 요청 기관의 필요 물품 소유권과 매칭 여부를 확인한 뒤 전화번호를 반환한다. */
+export async function fetchDonorContact(itemId, needId) {
+  const { data, error } = await requireClient().rpc('get_donor_contact', { p_item_id: itemId, p_need_id: needId })
+  if (error) {
+    if (error.code === 'P0001' || error.code === '42501') throw new Error(friendlyError(error))
+    throw new Error('연락처를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+  }
+  return data
+}
+
+/** 같은 모집 중인 필요 물품은 재사용해서 매칭 검색마다 중복 등록하지 않는다. */
+export async function registerMatchingNeed(need, institution, userId) {
+  const mine = await fetchMyInstitution(userId)
+  const categoryKey = (categories) => JSON.stringify([...categories].sort())
+  const existing = mine?.needs.find((row) => row.status === 'open' && row.title === need.title &&
+    row.quantity === need.quantity && categoryKey(row.categories) === categoryKey(need.categories))
+  if (existing) {
+    const { location, phone, hours, methods } = institution
+    await updateMyInstitution(mine.id, { location, phone, hours, methods })
+    return existing.id
+  }
+  return registerInstitutionNeed(need, institution)
+}
+
+/** 받는 계정·점수·크레딧은 DB가 소유자와 등록 내용에서 직접 결정한다. */
+export async function requestItemMatch(itemId, needId, method) {
+  const { data, error } = await requireClient().rpc('request_item_match', { p_item_id: itemId, p_need_id: needId, p_method: method })
+  if (error) throw new Error(friendlyError(error))
+  return data
+}
+
+export async function respondItemMatch(matchId, action) {
+  const { data, error } = await requireClient().rpc('respond_item_match', { p_match_id: matchId, p_action: action })
+  if (error) throw new Error(friendlyError(error))
+  return data
+}
+
+export async function fetchMatchingDashboard() {
+  const { data, error } = await requireClient().rpc('get_my_matching_dashboard')
+  if (error) throw new Error(friendlyError(error))
+  return data
+}
+
+/** 전달 완료 누르기. 기부자·기관이 모두 누르면 최종 완료되고 그때 기부자에게 크레딧이 적립된다. */
+export async function completeItemMatch(matchId) {
+  const { data, error } = await requireClient().rpc('complete_item_match', { p_match_id: matchId })
+  if (error) throw new Error(friendlyError(error))
+  return data
 }

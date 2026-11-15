@@ -62,7 +62,8 @@ export function donationGuide(donor, institution) {
       method: methodLabel(id),
       lines: [
         `${institution.name}에서 기부자님 지역(${donor.region})으로 찾아가 물품을 가져가요.`,
-        '매칭이 확정되면 기관에서 일정을 연락드려요.',
+        `기관 연락처: ${institution.phone}`,
+        '기관에 연락해 방문 수거 일정을 정해 주세요.',
       ],
     }
   })
@@ -70,7 +71,7 @@ export function donationGuide(donor, institution) {
 
 /**
  * 기관에게 보여줄 수령 방법 안내.
- * 기부자 연락처는 매칭 확정 전에는 보여주지 않는다.
+ * 기부자 연락처는 기관 계정의 매칭 결과에 별도로 표시한다.
  */
 export function receiveGuide(item, institution) {
   return commonMethods(item.methods, institution.methods).map((id) => {
