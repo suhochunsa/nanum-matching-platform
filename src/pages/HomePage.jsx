@@ -184,6 +184,7 @@ export default function HomePage() {
                 showPhoto
                 photo={x.photo}
                 availableUntil={x.availableUntil}
+                food={x}
               />
             ) : (
               <ItemCard

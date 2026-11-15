@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
 import DataNotice from '../components/DataNotice.jsx'
+import FoodFields from '../components/FoodFields.jsx'
 import FormField from '../components/FormField.jsx'
 import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
@@ -13,6 +14,7 @@ import { buttonClass, fieldClass, pageTitleClass } from '../components/ui.js'
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel, todayString } from '../data/dates.js'
 import { donationGuide, methodLabel } from '../data/delivery.js'
+import { foodSummary, isFood } from '../data/food.js'
 import { compressImage } from '../data/image.js'
 import { CONDITIONS } from '../data/mockData.js'
 import { matchDonorToInstitutions } from '../data/matching.js'
@@ -33,6 +35,11 @@ const INITIAL_VALUES = {
   noDeadline: false,
   detail: '',
   methods: [],
+  // 식품일 때만 쓴다
+  foodExpiry: '',
+  foodOpened: '', // 'unopened' | 'opened'
+  foodStorage: '', // 'room' | 'fridge' | 'frozen'
+  foodLabel: null,
 }
 
 export default function DonorPage() {
@@ -53,6 +60,7 @@ export default function DonorPage() {
 
   // 한 번 제출을 시도한 뒤부터는 입력할 때마다 다시 검사해서 오류 표시를 갱신한다.
   const errors = submitted ? validateDonor(values) : {}
+  const food = isFood(values.categories)
 
   // 사진이 바뀌거나 페이지를 떠날 때 이전 미리보기 URL을 해제한다.
   useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview])
@@ -92,7 +100,9 @@ export default function DonorPage() {
         ...values,
         title: values.title.trim(),
         region: values.region.trim(),
-        availableUntil: values.noDeadline ? null : values.availableUntil,
+        // 식품은 소비기한까지 기부할 수 있다
+        availableUntil: food ? values.foodExpiry : values.noDeadline ? null : values.availableUntil,
+        isFood: food,
         detail: values.detail.trim(),
         registeredAt: new Date().toLocaleDateString('ko-KR'),
       },
@@ -120,11 +130,25 @@ export default function DonorPage() {
         catch { throw new Error('사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.') }
         photoUrl = await uploadItemPhoto(blob)
       }
+      let foodLabelUrl = null
+      if (s.isFood) {
+        let blob
+        // 라벨 글씨가 읽히도록 일반 사진보다 크게 줄인다
+        try { blob = await compressImage(s.foodLabel, { maxSize: 1280, quality: 0.85 }) }
+        catch { throw new Error('라벨 사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.') }
+        foodLabelUrl = await uploadItemPhoto(blob)
+      }
       const itemId = await registerDonorItem({
         donorName: s.donorName, donorPhone: s.donorPhone, title: s.title,
         categories: s.categories, quantity: Number(s.quantity), condition: s.condition,
         detail: s.detail, region: s.region, methods: s.methods,
         availableUntil: s.availableUntil, photoUrl,
+        ...(s.isFood && {
+          foodExpiry: s.foodExpiry,
+          foodOpened: s.foodOpened === 'opened',
+          foodStorage: s.foodStorage,
+          foodLabelUrl,
+        }),
       })
       setResult((current) => current?.id === snapshot.id ? { ...current, itemId } : current)
       setRegisterStatus('done')
@@ -283,34 +307,40 @@ export default function DonorPage() {
               </FormField>
             </div>
 
-            <FormField
-              id="availableUntil"
-              label="기부 가능 마감일"
-              required
-              hint="유통기한 등으로 이 날짜까지만 기부할 수 있어요. 지나면 목록에 '만료'로 표시돼요."
-              error={errors.availableUntil}
-            >
-              <div className="flex items-center gap-3">
-                <input
-                  id="availableUntil"
-                  type="date"
-                  min={todayString()}
-                  value={values.availableUntil}
-                  onChange={update('availableUntil')}
-                  disabled={values.noDeadline}
-                  className={`${fieldClass(errors.availableUntil)} disabled:opacity-40`}
-                />
-                <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-semibold text-ink">
+            {food ? (
+              <p className="rounded-2xl bg-canvas-soft px-4 py-3 text-xs text-muted">
+                식품은 기부 가능 마감일 대신 아래 소비기한까지 기부할 수 있어요.
+              </p>
+            ) : (
+              <FormField
+                id="availableUntil"
+                label="기부 가능 마감일"
+                required
+                hint="유통기한 등으로 이 날짜까지만 기부할 수 있어요. 지나면 목록에 '만료'로 표시돼요."
+                error={errors.availableUntil}
+              >
+                <div className="flex items-center gap-3">
                   <input
-                    type="checkbox"
-                    checked={values.noDeadline}
-                    onChange={(e) => setValues((v) => ({ ...v, noDeadline: e.target.checked }))}
-                    className="h-4 w-4 accent-ink"
+                    id="availableUntil"
+                    type="date"
+                    min={todayString()}
+                    value={values.availableUntil}
+                    onChange={update('availableUntil')}
+                    disabled={values.noDeadline}
+                    className={`${fieldClass(errors.availableUntil)} disabled:opacity-40`}
                   />
-                  기한 없음
-                </label>
-              </div>
-            </FormField>
+                  <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-semibold text-ink">
+                    <input
+                      type="checkbox"
+                      checked={values.noDeadline}
+                      onChange={(e) => setValues((v) => ({ ...v, noDeadline: e.target.checked }))}
+                      className="h-4 w-4 accent-ink"
+                    />
+                    기한 없음
+                  </label>
+                </div>
+              </FormField>
+            )}
 
             <FormField
               id="detail"
@@ -328,6 +358,16 @@ export default function DonorPage() {
               />
             </FormField>
           </fieldset>
+
+          {food && (
+            <fieldset className="space-y-4">
+              <legend className="mb-2 text-xl font-display text-ink">식품 정보</legend>
+              <p className="text-xs text-muted">
+                식품은 안전을 위해 추가 정보가 필요해요. 소비기한이 지나면 자동으로 매칭되지 않고, 한 번 등록한 식품 정보는 바꿀 수 없어요.
+              </p>
+              <FoodFields values={values} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} errors={errors} />
+            </fieldset>
+          )}
 
           <fieldset>
             <legend className="mb-4 text-xl font-display text-ink">전달 방법</legend>
@@ -384,7 +424,12 @@ export default function DonorPage() {
                       result.submitted.categories.map(formatCategory).join(', '),
                     ],
                     ['사진', result.submitted.photo ? result.submitted.photo.name : '없음'],
-                    ['기부 가능 기간', availabilityLabel(result.submitted.availableUntil)],
+                    ...(result.submitted.isFood
+                      ? [
+                          ['식품', foodSummary({ ...result.submitted, foodOpened: result.submitted.foodOpened === 'opened' })],
+                          ['라벨 사진', result.submitted.foodLabel?.name ?? '없음'],
+                        ]
+                      : [['기부 가능 기간', availabilityLabel(result.submitted.availableUntil)]]),
                     ['상세 정보', result.submitted.detail || '없음'],
                     ['전달 방법', result.submitted.methods.map(methodLabel).join(', ')],
                     ['등록일', result.submitted.registeredAt],

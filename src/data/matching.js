@@ -1,5 +1,6 @@
 import { parentOf, parentsOf } from './categories.js'
 import { isExpired } from './dates.js'
+import { isFoodMatchable } from './food.js'
 
 // 매칭 점수 = 아래 네 항목(각 0~1)을 가중합한 값(0~100점).
 export const WEIGHTS = { category: 0.35, name: 0.3, quantity: 0.2, condition: 0.15 }
@@ -146,13 +147,16 @@ export function matchDonorToInstitutions({ categories, title, quantity, conditio
 /**
  * 기관 입력값을 기부 등록 목록과 대조해 점수 순으로 돌려준다.
  * 기부 가능 기간이 지났거나 이미 매칭·기부된 물품은 받을 수 없으므로 후보에서 뺀다.
+ * 식품은 소비기한이 지났거나 소비기한·라벨 정보가 없으면 뺀다. (DB도 같은 규칙으로 요청을 막는다)
  * data: store.js의 loadData() 결과
  */
 export function matchInstitutionToDonors({ categories, title, quantity }, data) {
   const need = Number(quantity) || 0
   const matches = rank(
     data.donorItems
-      .filter((item) => !isExpired(item.availableUntil) && (item.status ?? 'available') === 'available')
+      .filter(
+        (item) => !isExpired(item.availableUntil) && (item.status ?? 'available') === 'available' && isFoodMatchable(item),
+      )
       .map((item) =>
         scoreMatch({
           categories,

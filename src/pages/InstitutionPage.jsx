@@ -4,6 +4,7 @@ import CategoryTree from '../components/CategoryTree.jsx'
 import DataNotice from '../components/DataNotice.jsx'
 import DonorContact from '../components/DonorContact.jsx'
 import FormField from '../components/FormField.jsx'
+import FoodNotice from '../components/FoodNotice.jsx'
 import GuideBox from '../components/GuideBox.jsx'
 import InputSummary from '../components/InputSummary.jsx'
 import MatchList from '../components/MatchList.jsx'
@@ -14,6 +15,7 @@ import { buttonClass, fieldClass, pageTitleClass } from '../components/ui.js'
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel } from '../data/dates.js'
 import { methodLabel, receiveGuide } from '../data/delivery.js'
+import { foodSummary, isFood } from '../data/food.js'
 import { matchInstitutionToDonors } from '../data/matching.js'
 import { loadData, registerMatchingNeed, requestItemMatch } from '../data/store.js'
 import { validateInstitution } from '../data/validation.js'
@@ -339,7 +341,9 @@ export default function InstitutionPage() {
                       matches={result.matches}
                       primary={(m) => m.title}
                       secondary={(m) =>
-                        `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition} · 기부 가능 ${availabilityLabel(m.availableUntil)}`
+                        `${m.categories.map(formatCategory).join(', ')} · 기부자 ${m.donor} · 수량 ${m.quantity} · ${m.condition} · ${
+                          isFood(m.categories) ? foodSummary(m) : `기부 가능 ${availabilityLabel(m.availableUntil)}`
+                        }`
                       }
                       photo={(m) => m.photo}
                       renderContact={(m) => (
@@ -352,12 +356,15 @@ export default function InstitutionPage() {
                       )}
                       detailLabel="수령 방법 보기"
                       renderDetail={(m) => (
-                        <GuideBox
-                          guide={receiveGuide(m, result.institution)}
-                          fallback={`기부자가 가능한 방법(${m.methods
-                            .map(methodLabel)
-                            .join(', ')})과 받을 수 있는 방법이 겹치지 않아요.`}
-                        />
+                        <div className="space-y-2">
+                          <FoodNotice item={m} />
+                          <GuideBox
+                            guide={receiveGuide(m, result.institution)}
+                            fallback={`기부자가 가능한 방법(${m.methods
+                              .map(methodLabel)
+                              .join(', ')})과 받을 수 있는 방법이 겹치지 않아요.`}
+                          />
+                        </div>
                       )}
                     />
                   </div>

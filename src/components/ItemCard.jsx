@@ -1,5 +1,6 @@
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel, daysLeft, isExpired } from '../data/dates.js'
+import { foodState, foodSummary } from '../data/food.js'
 import Avatar from './Avatar.jsx'
 import PhotoThumb from './PhotoThumb.jsx'
 import { chipClass } from './ui.js'
@@ -14,8 +15,10 @@ const MAX_BADGES = 2
  *   3일 이내로 남으면 파란색으로 강조. null(기한 없음)이나 생략하면 아무것도 표시하지 않는다.
  * meta: 수량 옆에 붙일 짧은 정보 (예: 물품 상태)
  * owner: { name, avatar } 올린 사람(기부자 닉네임·기관명). 카드 오른쪽 아래에 작게 보여준다.
+ * food: 식품 물품이면 그 물품 객체 (소비기한·보관·개봉 표시. 식품은 기부 가능 마감일 = 소비기한)
  */
-export default function ItemCard({ categories, title, quantity, meta, owner, showPhoto, photo, availableUntil }) {
+export default function ItemCard({ categories, title, quantity, meta, owner, showPhoto, photo, availableUntil, food }) {
+  const foodStatus = food ? foodState(food) : 'none'
   const hidden = categories.length - MAX_BADGES
   const expired = isExpired(availableUntil)
   const urgent = Boolean(availableUntil) && !expired && daysLeft(availableUntil) <= 3
@@ -31,7 +34,7 @@ export default function ItemCard({ categories, title, quantity, meta, owner, sho
       <div className="flex min-w-0 flex-1 flex-col">
         {expired && (
           <p className="mb-2 self-start rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
-            기부 가능 기간 만료
+            {foodStatus === 'expired' ? '소비기한 지남' : '기부 가능 기간 만료'}
           </p>
         )}
         <div className="flex flex-wrap gap-1">
@@ -47,7 +50,13 @@ export default function ItemCard({ categories, title, quantity, meta, owner, sho
           수량 {quantity}
           {meta && <> · {meta}</>}
         </p>
-        {availableUntil && (
+        {foodStatus !== 'none' && (
+          <p className={`mt-1 text-xs ${foodStatus === 'ok' ? (urgent ? 'font-semibold text-accent' : 'text-faint') : 'font-semibold text-red-600'}`}>
+            {foodSummary(food)}
+            {foodStatus === 'missing' && ' · 매칭 불가'}
+          </p>
+        )}
+        {foodStatus === 'none' && availableUntil && (
           <p
             className={`mt-1 text-xs ${
               expired ? 'font-semibold text-red-600' : urgent ? 'font-semibold text-accent' : 'text-faint'

@@ -18,7 +18,7 @@ async function database() {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   // 매칭 관련 마이그레이션은 순서대로 다시 실행해도 같은 상태를 유지한다.
-  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql']) {
+  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql']) {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   return db
@@ -198,6 +198,82 @@ const db = await database()
       assert.equal((await dashboard(db,f.donor)).creditTotal,0)
       await finish(db,f,id)
       const mine=await dashboard(db,f.donor); assert.equal(mine.creditTotal,50); assert.equal(mine.creditEntries.length,1)
+    })
+
+// ---- 식품 안전 규칙 ----------------------------------------------------------
+const LABEL = 'https://abc.supabase.co/storage/v1/object/public/item-photos/label-1.jpg'
+const day = (n) => (n >= 0 ? `current_date + ${n}` : `current_date - ${-n}`)
+async function foodFixture(db) {
+  const f = await fixture(db)
+  await admin(db, `update institutions set methods=array['pickup','parcel','dropoff'] where owner_id=$1`, [f.org])
+  await admin(db, `update institution_needs set title='라면', categories=array['식품/라면·면류'] where id=$1`, [f.need])
+  return f
+}
+async function registerFood(db, f, o = {}) {
+  const v = { expiry: day(10), opened: 'false', storage: "'room'", label: `'${LABEL}'`, methods: "array['pickup','parcel']", until: 'null', ...o }
+  return (await as(db, f.donor, `select public.register_donor_item('테스트','010-1111-2222','봉지 라면',array['식품/라면·면류'],2,'새 상품','','서울',
+    ${v.methods},${v.until},'',${v.expiry},${v.opened},${v.storage},${v.label}) id`))[0].id
+}
+
+    await test('식품은 소비기한·개봉 여부·보관 방법·라벨 사진이 모두 있어야 등록된다',async()=>{
+      const f=await foodFixture(db)
+      await assert.rejects(registerFood(db,f,{expiry:'null'}),/소비기한을 입력/)
+      await assert.rejects(registerFood(db,f,{opened:'null'}),/개봉 여부/)
+      await assert.rejects(registerFood(db,f,{storage:'null'}),/보관 방법/)
+      await assert.rejects(registerFood(db,f,{label:"''"}),/라벨 사진을 올려/)
+      await assert.rejects(registerFood(db,f,{label:"'https://evil.com/x.jpg'"}),/라벨 사진이 올바르지/)
+      await assert.rejects(registerFood(db,f,{expiry:day(-1)}),/소비기한이 지난/)
+      await assert.rejects(registerFood(db,f,{storage:"'fridge'"}),/냉장·냉동 식품은 택배/)
+      await assert.rejects(registerFood(db,f,{storage:"'invalid'"}),/check constraint/)
+      const id=await registerFood(db,f,{storage:"'frozen'",methods:"array['pickup']"})
+      const [row]=await admin(db,`select food_storage, food_opened, available_until = food_expiry same, food_expiry - current_date days from donor_items where id=$1`,[id])
+      assert.deepEqual(row,{food_storage:'frozen',food_opened:false,same:true,days:10})
+    })
+    await test('식품의 기부 가능 마감일은 소비기한까지로 맞춰지고 늦출 수 없다',async()=>{
+      const f=await foodFixture(db)
+      const id=await registerFood(db,f,{until:day(30)})
+      assert.equal((await admin(db,'select available_until = food_expiry same from donor_items where id=$1',[id]))[0].same,true)
+      await assert.rejects(as(db,f.donor,`update donor_items set available_until=${day(20)} where id=$1`,[id]),/소비기한보다 늦을 수/)
+      await assert.rejects(as(db,f.donor,'update donor_items set available_until=null where id=$1',[id]),/소비기한보다 늦을 수/)
+      await as(db,f.donor,`update donor_items set available_until=${day(5)} where id=$1`,[id])
+      await assert.rejects(as(db,f.donor,`update donor_items set food_expiry=${day(60)} where id=$1`,[id]),/바꿀 수 없어요/)
+      await assert.rejects(as(db,f.donor,'update donor_items set food_opened=true where id=$1',[id]),/바꿀 수 없어요/)
+      await assert.rejects(as(db,f.donor,"update donor_items set food_label_url='' where id=$1",[id]),/바꿀 수 없어요/)
+    })
+    await test('일반 물품은 식품 정보를 넣어도 저장하지 않는다',async()=>{
+      const f=await fixture(db)
+      const [r]=await as(db,f.donor,`select public.register_donor_item('테스트','010-1111-2222','패딩',array['의류/아우터'],1,'새 상품','','서울',array['pickup'],null,'',current_date+3,true,'room','${LABEL}') id`)
+      assert.deepEqual((await admin(db,'select food_expiry,food_opened,food_storage,food_label_url from donor_items where id=$1',[r.id]))[0],
+        {food_expiry:null,food_opened:null,food_storage:null,food_label_url:''})
+    })
+    await test('소비기한이 지났거나 식품 정보가 없는 식품은 매칭 요청·수락이 안 된다',async()=>{
+      const f=await foodFixture(db)
+      // 식품 정보가 없는 기존 식품
+      await admin(db,"update donor_items set title='봉지 라면', categories=array['식품/라면·면류'] where id=$1",[f.item])
+      await assert.rejects(request(db,f),/식품 정보를 먼저/)
+      // 정상 식품: 요청은 되지만 수락 전에 소비기한이 지나면 수락이 막힌다
+      const id=await registerFood(db,f)
+      const m=(await as(db,f.donor,'select public.request_item_match($1,$2,$3) id',[id,f.need,'pickup']))[0].id
+      // 시간이 지난 상황을 흉내 내려고 테스트에서만 보호 트리거를 잠시 끄고 소비기한을 어제로 바꾼다.
+      await admin(db,"set session_replication_role = replica")
+      await admin(db,`update donor_items set available_until=${day(-1)}, food_expiry=${day(-1)} where id=$1`,[id])
+      await admin(db,"set session_replication_role = origin")
+      await assert.rejects(respond(db,f.org,m,'accept'),/기간이 지난|소비기한이 지난/)
+      assert.equal((await admin(db,'select status from matches where id=$1',[m]))[0].status,'requested')
+      // 소비기한이 지난 식품은 새 요청도 안 된다
+      await respond(db,f.donor,m,'cancel')
+      await assert.rejects(as(db,f.org,'select public.request_item_match($1,$2,$3)',[id,f.need,'pickup']),/소비기한이 지난|기간이 지난/)
+    })
+    await test('기존 식품은 주인이 마이페이지에서 식품 정보를 한 번 채우면 매칭할 수 있다',async()=>{
+      const f=await foodFixture(db)
+      await admin(db,"update donor_items set title='봉지 라면', categories=array['식품/라면·면류'], methods=array['pickup'] where id=$1",[f.item])
+      const fill=`update donor_items set food_expiry=${day(7)}, food_opened=false, food_storage='room', food_label_url='${LABEL}' where id=$1`
+      assert.equal((await as(db,f.other,fill+' returning id',[f.item])).length,0)
+      await assert.rejects(as(db,f.donor,`update donor_items set food_expiry=${day(7)} where id=$1`,[f.item]),/개봉 여부/)
+      await as(db,f.donor,fill,[f.item])
+      assert.equal((await admin(db,'select available_until = food_expiry same from donor_items where id=$1',[f.item]))[0].same,true)
+      const m=await request(db,f); await respond(db,f.org,m,'accept'); await finish(db,f,m)
+      assert.equal((await dashboard(db,f.donor)).creditTotal,45) // 식품 15 + 수량 3 × 10
     })
 
 await test('운영 검증 SQL도 동일하게 통과하고 임시 데이터를 남기지 않는다', async () => {

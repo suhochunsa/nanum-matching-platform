@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCategory } from '../../data/categories.js'
 import { availabilityLabel, isExpired, todayString } from '../../data/dates.js'
+import { foodState, foodSummary, isFood } from '../../data/food.js'
+import { compressImage } from '../../data/image.js'
 import { ITEM_STATUS, ITEM_STATUS_CHOICES } from '../../data/status.js'
-import { deleteDonorItem, fetchMyDonorItems, updateDonorItem } from '../../data/store.js'
-import { validateDonorItemEdit } from '../../data/validation.js'
+import { deleteDonorItem, fetchMyDonorItems, fillFoodInfo, updateDonorItem, uploadItemPhoto } from '../../data/store.js'
+import { checkColdParcel, validateDonorItemEdit, validateFoodInfo } from '../../data/validation.js'
+import FoodFields from '../FoodFields.jsx'
+import FoodNotice from '../FoodNotice.jsx'
 import FormField from '../FormField.jsx'
 import { buttonClass, fieldClass } from '../ui.js'
 import PhotoThumb from '../PhotoThumb.jsx'
@@ -13,6 +17,9 @@ import StatusBadge from './StatusBadge.jsx'
 
 /** 기부 가능한데 마감일이 지났으면 '기간 만료'로 따로 보여준다. */
 function badgeOf(item) {
+  const food = foodState(item)
+  if (item.status === 'available' && food === 'expired') return { label: '소비기한 지남', tone: 'warn' }
+  if (item.status === 'available' && food === 'missing') return { label: '식품 정보 필요', tone: 'warn' }
   if (item.status === 'available' && isExpired(item.availableUntil)) return { label: '기간 만료', tone: 'warn' }
   return { label: ITEM_STATUS[item.status], tone: item.status === 'available' ? 'active' : 'done' }
 }
@@ -98,8 +105,14 @@ export default function MyDonorItems({ userId }) {
                     </div>
                     <p className="mt-0.5 text-xs text-muted">{item.categories.map(formatCategory).join(', ')}</p>
                     <p className="mt-1 text-sm text-muted">
-                      수량 {item.quantity} · {item.condition} · 기부 가능: {availabilityLabel(item.availableUntil)}
+                      수량 {item.quantity} · {item.condition} ·{' '}
+                      {isFood(item.categories) ? foodSummary(item) : `기부 가능: ${availabilityLabel(item.availableUntil)}`}
                     </p>
+                    {isFood(item.categories) && (
+                      <div className="mt-2">
+                        <FoodNotice item={item} />
+                      </div>
+                    )}
                   </div>
                 </div>
               }
@@ -113,12 +126,82 @@ export default function MyDonorItems({ userId }) {
 
 /** 수량·마감일·상태 수정 폼 */
 function DonorItemEditor({ item, onSaved, onCancel }) {
+  // 식품 정보가 없는 기존 식품은 먼저 식품 정보를 채운다
+  if (foodState(item) === 'missing') return <FoodInfoFiller item={item} onSaved={onSaved} onCancel={onCancel} />
+  return <ItemFieldsEditor item={item} onSaved={onSaved} onCancel={onCancel} />
+}
+
+/** 식품 정보가 없는 기존 식품: 소비기한·개봉 여부·보관 방법·라벨을 한 번 입력 (이후에는 바꿀 수 없음) */
+function FoodInfoFiller({ item, onSaved, onCancel }) {
+  const [values, setValues] = useState({ foodExpiry: '', foodOpened: '', foodStorage: '', foodLabel: null })
+  const [submitted, setSubmitted] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const check = (v) => {
+    const found = validateFoodInfo(v)
+    const cold = checkColdParcel({ ...v, methods: item.methods })
+    return cold && !found.foodStorage ? { ...found, foodStorage: cold } : found
+  }
+  const errors = submitted ? check(values) : {}
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setSubmitted(true)
+    const found = check(values)
+    const first = Object.keys(found)[0]
+    if (first) {
+      document.getElementById(`${item.id}-${first}`)?.focus()
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      let blob
+      try { blob = await compressImage(values.foodLabel, { maxSize: 1280, quality: 0.85 }) }
+      catch { throw new Error('라벨 사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.') }
+      const fields = {
+        foodExpiry: values.foodExpiry,
+        foodOpened: values.foodOpened === 'opened',
+        foodStorage: values.foodStorage,
+        foodLabelUrl: await uploadItemPhoto(blob),
+      }
+      const availableUntil = await fillFoodInfo(item.id, fields)
+      onSaved({ foodExpiry: fields.foodExpiry, foodOpened: fields.foodOpened, foodStorage: fields.foodStorage, foodLabel: fields.foodLabelUrl, availableUntil })
+    } catch (err) {
+      setError(err.message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} noValidate className="space-y-3">
+      <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs text-red-700">
+        식품 정보가 없어서 지금은 매칭되지 않아요. 아래 정보를 입력하면 매칭할 수 있어요. 한 번 저장하면 바꿀 수 없으니 포장을 보고 정확히 입력해 주세요.
+      </p>
+      <FoodFields values={values} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} errors={errors} idPrefix={`${item.id}-`} />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} disabled={busy} className={buttonClass('ghost', 'sm')}>
+          취소
+        </button>
+        <button type="submit" disabled={busy} className={buttonClass('primary', 'sm')}>
+          {busy ? '저장하는 중…' : '식품 정보 저장'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+/** 수량·마감일·상태 수정 폼 */
+function ItemFieldsEditor({ item, onSaved, onCancel }) {
+  const food = isFood(item.categories)
   const [form, setForm] = useState({
     quantity: String(item.quantity),
     availableUntil: item.availableUntil ?? '',
     noDeadline: !item.availableUntil,
     status: item.status,
     originalUntil: item.availableUntil,
+    maxUntil: food ? item.foodExpiry : null,
   })
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -178,26 +261,35 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
         </FormField>
       </div>
 
-      <FormField id={id('availableUntil')} label="기부 가능 마감일" error={errors.availableUntil}>
+      <FormField
+        id={id('availableUntil')}
+        label="기부 가능 마감일"
+        hint={food ? '식품은 소비기한까지만 고를 수 있어요. 소비기한·라벨 등 식품 정보는 바꿀 수 없어요.' : undefined}
+        error={errors.availableUntil}
+      >
         <div className="flex items-center gap-3">
           <input
             id={id('availableUntil')}
             type="date"
             min={todayString()}
+            max={food ? item.foodExpiry : undefined}
             value={form.availableUntil}
             onChange={(e) => setForm((f) => ({ ...f, availableUntil: e.target.value }))}
             disabled={form.noDeadline}
             className={`${fieldClass(errors.availableUntil)} disabled:opacity-40`}
           />
-          <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-semibold text-ink">
-            <input
-              type="checkbox"
-              checked={form.noDeadline}
-              onChange={(e) => setForm((f) => ({ ...f, noDeadline: e.target.checked }))}
-              className="h-4 w-4 accent-ink"
-            />
-            기한 없음
-          </label>
+          {/* 식품은 소비기한이 있으므로 '기한 없음'을 고를 수 없다 */}
+          {!food && (
+            <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-sm font-semibold text-ink">
+              <input
+                type="checkbox"
+                checked={form.noDeadline}
+                onChange={(e) => setForm((f) => ({ ...f, noDeadline: e.target.checked }))}
+                className="h-4 w-4 accent-ink"
+              />
+              기한 없음
+            </label>
+          )}
         </div>
       </FormField>
 

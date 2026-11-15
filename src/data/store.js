@@ -30,6 +30,11 @@ function toDonorItem(row) {
     detail: row.detail,
     photo: row.photo_url,
     status: row.status,
+    // 식품 정보 (식품이 아니면 비어 있음)
+    foodExpiry: row.food_expiry ?? null,
+    foodOpened: row.food_opened ?? null,
+    foodStorage: row.food_storage ?? null,
+    foodLabel: row.food_label_url ?? '',
   }
 }
 
@@ -124,6 +129,10 @@ export async function registerDonorItem(item) {
     p_methods: item.methods,
     p_available_until: item.availableUntil,
     p_photo_url: item.photoUrl,
+    p_food_expiry: item.foodExpiry ?? null,
+    p_food_opened: item.foodOpened ?? null,
+    p_food_storage: item.foodStorage ?? null,
+    p_food_label_url: item.foodLabelUrl ?? null,
   })
   if (error) throw new Error(friendlyError(error))
   return data
@@ -304,4 +313,24 @@ export async function completeItemMatch(matchId) {
   const { data, error } = await requireClient().rpc('complete_item_match', { p_match_id: matchId })
   if (error) throw new Error(friendlyError(error))
   return data
+}
+
+/**
+ * 기존 식품에 식품 정보를 한 번 채운다 (마이페이지). 한 번 채우면 바꿀 수 없고, 기부 가능 마감일은 소비기한까지로 맞춰진다.
+ * fields: { foodExpiry, foodOpened(boolean), foodStorage, foodLabelUrl }
+ */
+export async function fillFoodInfo(itemId, fields) {
+  const { data, error } = await requireClient()
+    .from('donor_items')
+    .update({
+      food_expiry: fields.foodExpiry,
+      food_opened: fields.foodOpened,
+      food_storage: fields.foodStorage,
+      food_label_url: fields.foodLabelUrl,
+    })
+    .eq('id', itemId)
+    .select('available_until')
+  if (error) throw new Error(friendlyError(error))
+  if (data.length === 0) throw new Error('식품 정보를 입력할 권한이 없거나 이미 지워진 물품이에요.')
+  return data[0].available_until
 }

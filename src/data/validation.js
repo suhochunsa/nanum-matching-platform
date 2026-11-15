@@ -2,6 +2,7 @@
 // 오류가 없으면 빈 객체.
 
 import { todayString } from './dates.js'
+import { COLD_STORAGE, isFood } from './food.js'
 
 export const MAX_PHOTO_MB = 5
 export const MAX_DETAIL_LENGTH = 300
@@ -62,6 +63,7 @@ function compact(errors) {
 
 // 키 순서 = 화면의 입력칸 순서 (제출 시 첫 번째 오류 칸으로 포커스를 옮기기 때문)
 export function validateDonor(v) {
+  const food = isFood(v.categories)
   return compact({
     donorName: checkText(v.donorName, '이름', { min: 2, max: 20 }),
     donorPhone: checkPhone(v.donorPhone),
@@ -70,13 +72,36 @@ export function validateDonor(v) {
     title: checkText(v.title, '물품 이름', { min: 2, max: 40 }),
     categories: checkCategories(v.categories),
     quantity: checkQuantity(v.quantity),
-    availableUntil: checkAvailableUntil(v.availableUntil, v.noDeadline),
+    // 식품은 기부 가능 마감일 대신 소비기한을 쓴다
+    availableUntil: food ? undefined : checkAvailableUntil(v.availableUntil, v.noDeadline),
     detail:
       v.detail.length > MAX_DETAIL_LENGTH
         ? `상세 정보는 ${MAX_DETAIL_LENGTH}자 이하로 입력해 주세요.`
         : undefined,
-    methods: checkMethods(v.methods, '전달 방법'),
+    ...(food ? validateFoodInfo(v) : {}),
+    methods: checkMethods(v.methods, '전달 방법') ?? (food ? checkColdParcel(v) : undefined),
   })
+}
+
+// 식품 정보 (기부자 신청 폼, 마이페이지 '식품 정보 입력'에서 함께 쓴다)
+// v: { foodExpiry: 'YYYY-MM-DD', foodOpened: 'unopened' | 'opened' | '', foodStorage, foodLabel: File | null }
+export function validateFoodInfo(v) {
+  return compact({
+    foodExpiry: !v.foodExpiry
+      ? '소비기한을 입력해 주세요.'
+      : v.foodExpiry < todayString()
+        ? '소비기한이 지난 식품은 기부할 수 없어요.'
+        : undefined,
+    foodOpened: v.foodOpened ? undefined : '개봉 여부를 골라 주세요.',
+    foodStorage: v.foodStorage ? undefined : '보관 방법을 골라 주세요.',
+    foodLabel: !v.foodLabel ? '식품 라벨 사진을 올려 주세요. (제품명·소비기한·원재료가 보이게)' : checkPhoto(v.foodLabel),
+  })
+}
+
+// 냉장·냉동 식품은 택배로 보낼 수 없다
+export function checkColdParcel(v) {
+  if (COLD_STORAGE.includes(v.foodStorage) && v.methods.includes('parcel'))
+    return '냉장·냉동 식품은 택배로 보낼 수 없어요. 택배를 빼고 직접 전달이나 방문 수거를 골라 주세요.'
 }
 
 // 키 순서 = 화면의 입력칸 순서 (제출 시 첫 번째 오류 칸으로 포커스를 옮기기 때문)
@@ -96,11 +121,16 @@ export function validateInstitution(v) {
 // 마이페이지: 기부 물품 수정 (수량·마감일)
 // 마감일을 그대로 두면(originalUntil과 같으면) 이미 지난 날짜여도 통과시킨다.
 // (만료된 물품을 '기부 완료'로 바꾸는 것처럼 다른 칸만 고칠 수 있어야 하므로)
+// maxUntil: 식품이면 소비기한 (마감일을 그보다 늦게 둘 수 없음)
 export function validateDonorItemEdit(v) {
   const untilUnchanged = !v.noDeadline && v.availableUntil === v.originalUntil
   return compact({
     quantity: checkQuantity(v.quantity),
-    availableUntil: untilUnchanged ? undefined : checkAvailableUntil(v.availableUntil, v.noDeadline),
+    availableUntil: untilUnchanged
+      ? undefined
+      : v.maxUntil && (v.noDeadline || v.availableUntil > v.maxUntil)
+        ? '식품은 소비기한보다 늦게 둘 수 없어요.'
+        : checkAvailableUntil(v.availableUntil, v.noDeadline),
   })
 }
 
