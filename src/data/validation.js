@@ -2,7 +2,7 @@
 // 오류가 없으면 빈 객체.
 
 import { todayString } from './dates.js'
-import { COLD_STORAGE, isFood } from './food.js'
+import { isFood } from './food.js'
 
 export const MAX_PHOTO_MB = 5
 export const MAX_DETAIL_LENGTH = 300
@@ -79,7 +79,7 @@ export function validateDonor(v) {
         ? `상세 정보는 ${MAX_DETAIL_LENGTH}자 이하로 입력해 주세요.`
         : undefined,
     ...(food ? validateFoodInfo(v) : {}),
-    methods: checkMethods(v.methods, '전달 방법') ?? (food ? checkColdParcel(v) : undefined),
+    methods: checkMethods(v.methods, '전달 방법'),
   })
 }
 
@@ -98,11 +98,6 @@ export function validateFoodInfo(v) {
   })
 }
 
-// 냉장·냉동 식품은 택배로 보낼 수 없다
-export function checkColdParcel(v) {
-  if (COLD_STORAGE.includes(v.foodStorage) && v.methods.includes('parcel'))
-    return '냉장·냉동 식품은 택배로 보낼 수 없어요. 택배를 빼고 직접 전달이나 방문 수거를 골라 주세요.'
-}
 
 // 키 순서 = 화면의 입력칸 순서 (제출 시 첫 번째 오류 칸으로 포커스를 옮기기 때문)
 export function validateInstitution(v) {

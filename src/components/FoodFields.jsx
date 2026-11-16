@@ -80,7 +80,7 @@ export default function FoodFields({ values, onChange, errors = {}, idPrefix = '
         id={id('foodStorage')}
         label="보관 방법"
         required
-        hint="냉장·냉동 식품은 택배로 보낼 수 없어요."
+        hint="냉장·냉동 식품을 택배로 보낼 때는 아이스팩·보냉 포장을 해 주세요."
         error={errors.foodStorage}
       >
         <PillChoice id={id('foodStorage')} value={values.foodStorage} onChange={(v) => onChange('foodStorage', v)} options={Object.entries(FOOD_STORAGE)} error={errors.foodStorage} />

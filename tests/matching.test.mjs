@@ -18,7 +18,7 @@ async function database() {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   // 매칭 관련 마이그레이션은 순서대로 다시 실행해도 같은 상태를 유지한다.
-  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql']) {
+  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql', '20261118000000_allow_cold_parcel.sql']) {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   return db
@@ -223,7 +223,8 @@ async function registerFood(db, f, o = {}) {
       await assert.rejects(registerFood(db,f,{label:"''"}),/라벨 사진을 올려/)
       await assert.rejects(registerFood(db,f,{label:"'https://evil.com/x.jpg'"}),/라벨 사진이 올바르지/)
       await assert.rejects(registerFood(db,f,{expiry:day(-1)}),/소비기한이 지난/)
-      await assert.rejects(registerFood(db,f,{storage:"'fridge'"}),/냉장·냉동 식품은 택배/)
+      // 냉장·냉동 식품도 택배로 보낼 수 있다
+      assert.ok(await registerFood(db,f,{storage:"'fridge'"}))
       await assert.rejects(registerFood(db,f,{storage:"'invalid'"}),/check constraint/)
       const id=await registerFood(db,f,{storage:"'frozen'",methods:"array['pickup']"})
       const [row]=await admin(db,`select food_storage, food_opened, available_until = food_expiry same, food_expiry - current_date days from donor_items where id=$1`,[id])

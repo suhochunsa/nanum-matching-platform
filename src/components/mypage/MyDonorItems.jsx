@@ -6,7 +6,7 @@ import { foodState, foodSummary, isFood } from '../../data/food.js'
 import { compressImage } from '../../data/image.js'
 import { ITEM_STATUS, ITEM_STATUS_CHOICES } from '../../data/status.js'
 import { deleteDonorItem, fetchMyDonorItems, fillFoodInfo, updateDonorItem, uploadItemPhoto } from '../../data/store.js'
-import { checkColdParcel, validateDonorItemEdit, validateFoodInfo } from '../../data/validation.js'
+import { validateDonorItemEdit, validateFoodInfo } from '../../data/validation.js'
 import FoodFields from '../FoodFields.jsx'
 import FoodNotice from '../FoodNotice.jsx'
 import FormField from '../FormField.jsx'
@@ -137,11 +137,7 @@ function FoodInfoFiller({ item, onSaved, onCancel }) {
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const check = (v) => {
-    const found = validateFoodInfo(v)
-    const cold = checkColdParcel({ ...v, methods: item.methods })
-    return cold && !found.foodStorage ? { ...found, foodStorage: cold } : found
-  }
+  const check = validateFoodInfo
   const errors = submitted ? check(values) : {}
 
   async function handleSave(e) {

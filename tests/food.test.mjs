@@ -29,9 +29,9 @@ test('식품은 소비기한·개봉 여부·보관 방법·라벨 사진이 모
   assert.equal(validateDonor(base).availableUntil, undefined)
 })
 
-test('냉장·냉동 식품은 택배를 고를 수 없다', () => {
-  assert.match(validateDonor({ ...base, foodStorage: 'frozen', methods: ['parcel'] }).methods, /택배/)
-  assert.equal(validateDonor({ ...base, foodStorage: 'room', methods: ['parcel'] }).methods, undefined)
+test('냉장·냉동 식품도 택배를 고를 수 있다', () => {
+  assert.deepEqual(validateDonor({ ...base, foodStorage: 'frozen', methods: ['parcel'] }), {})
+  assert.deepEqual(validateDonor({ ...base, foodStorage: 'room', methods: ['parcel'] }), {})
 })
 
 test('일반 물품에는 식품 칸을 요구하지 않는다', () => {
