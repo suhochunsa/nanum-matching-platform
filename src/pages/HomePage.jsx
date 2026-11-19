@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import DataNotice from '../components/DataNotice.jsx'
 import HeroParallax from '../components/HeroParallax.jsx'
 import ItemCard from '../components/ItemCard.jsx'
+import ItemRequestDialog from '../components/ItemRequestDialog.jsx'
 import { buttonClass } from '../components/ui.js'
 import { CATEGORY_TREE, parentOf } from '../data/categories.js'
 import { isExpired } from '../data/dates.js'
@@ -47,6 +48,8 @@ export default function HomePage() {
   const [category, setCategory] = useState('') // '' = 전체, 아니면 큰 범주 이름
   const [query, setQuery] = useState('')
   const [visible, setVisible] = useState(PAGE_SIZE)
+  const [openItem, setOpenItem] = useState(null) // 상세창으로 연 기부 물품
+  const closeItem = useCallback(() => setOpenItem(null), [])
 
   useEffect(() => {
     let cancelled = false
@@ -165,6 +168,14 @@ export default function HomePage() {
           />
         </div>
 
+        {tab === 'items' && data && (
+          <p className="mt-4 text-xs text-muted">
+            {profile?.role === 'institution'
+              ? '물품을 누르면 자세한 정보를 보고, 우리 기관의 필요 물품과 연결해 바로 매칭을 요청할 수 있어요.'
+              : '물품을 누르면 자세한 정보를 볼 수 있어요. 기관 계정은 여기서 바로 매칭을 요청할 수 있어요.'}
+          </p>
+        )}
+
         {!data && <p className="mt-8 text-sm text-muted">불러오는 중…</p>}
 
         {data && filtered.length === 0 && (
@@ -185,6 +196,7 @@ export default function HomePage() {
                 photo={x.photo}
                 availableUntil={x.availableUntil}
                 food={x}
+                onOpen={() => setOpenItem(x)}
               />
             ) : (
               <ItemCard
@@ -197,6 +209,8 @@ export default function HomePage() {
             ),
           )}
         </div>
+
+        {openItem && <ItemRequestDialog item={openItem} data={data} onClose={closeItem} />}
 
         {filtered.length > visible && (
           <div className="mt-6 flex justify-center">

@@ -170,3 +170,37 @@ export function matchInstitutionToDonors({ categories, title, quantity }, data) 
   )
   return { matches, requestedQuantity: need }
 }
+
+/**
+ * 홈 화면에서 기관이 기부 물품을 바로 요청할 수 없는 이유. 요청할 수 있으면 ''.
+ * (DB의 request_item_match도 같은 조건을 다시 검사한다)
+ */
+export function itemRequestBlock(item) {
+  if (!item.ownerId) return '예시 물품이라 요청을 받을 기부자 계정이 없어요.'
+  if ((item.status ?? 'available') !== 'available') return '이미 매칭됐거나 기부가 끝난 물품이에요.'
+  if (isExpired(item.availableUntil)) return '기부 가능 기간이 지난 물품이에요.'
+  if (!isFoodMatchable(item)) {
+    return item.foodExpiry ? '소비기한이 지난 식품이라 매칭할 수 없어요.' : '소비기한·라벨 정보가 없는 식품이라 매칭할 수 없어요.'
+  }
+  return ''
+}
+
+/**
+ * 기부 물품 하나를 기관의 필요 물품들과 비교해 점수 순으로 돌려준다.
+ * 조건(범주 일치 또는 이름 유사도)이 맞지 않는 필요 물품은 score가 null이고 맨 뒤에 온다.
+ */
+export function rankNeedsForItem(item, needs) {
+  return needs
+    .map((need) => {
+      const scored = scoreMatch({
+        categories: item.categories,
+        title: item.title,
+        supplyQty: item.quantity,
+        needQty: need.quantity,
+        condition: item.condition,
+        target: need,
+      })
+      return scored ?? { ...need, score: null }
+    })
+    .sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
+}

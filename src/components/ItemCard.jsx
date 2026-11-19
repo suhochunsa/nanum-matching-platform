@@ -16,8 +16,10 @@ const MAX_BADGES = 2
  * meta: 수량 옆에 붙일 짧은 정보 (예: 물품 상태)
  * owner: { name, avatar } 올린 사람(기부자 닉네임·기관명). 카드 오른쪽 아래에 작게 보여준다.
  * food: 식품 물품이면 그 물품 객체 (소비기한·보관·개봉 표시. 식품은 기부 가능 마감일 = 소비기한)
+ * onOpen: 주면 카드를 누를 수 있게 된다 (제목 버튼의 누를 수 있는 영역을 카드 전체로 넓힌다.
+ *   사진은 자체 '크게 보기' 버튼이라 그 위에 올려서 따로 눌린다)
  */
-export default function ItemCard({ categories, title, quantity, meta, owner, showPhoto, photo, availableUntil, food }) {
+export default function ItemCard({ categories, title, quantity, meta, owner, showPhoto, photo, availableUntil, food, onOpen }) {
   const foodStatus = food ? foodState(food) : 'none'
   const hidden = categories.length - MAX_BADGES
   const expired = isExpired(availableUntil)
@@ -25,11 +27,15 @@ export default function ItemCard({ categories, title, quantity, meta, owner, sho
 
   return (
     <article
-      className={`flex h-full gap-4 rounded-3xl border bg-canvas p-5 transition-colors ${
+      className={`relative flex h-full gap-4 rounded-3xl border bg-canvas p-5 transition-colors ${
         expired ? 'border-red-500 ring-1 ring-red-500' : 'border-hairline-soft hover:border-hairline'
-      }`}
+      } ${onOpen ? 'cursor-pointer hover:bg-canvas-soft has-[button:focus-visible]:ring-2 has-[button:focus-visible]:ring-ink' : ''}`}
     >
-      {showPhoto && <PhotoThumb src={photo} alt={title} />}
+      {showPhoto && (
+        <div className="relative z-10">
+          <PhotoThumb src={photo} alt={title} />
+        </div>
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col">
         {expired && (
@@ -45,7 +51,15 @@ export default function ItemCard({ categories, title, quantity, meta, owner, sho
           ))}
           {hidden > 0 && <span className="px-1.5 py-1 text-xs font-semibold text-muted">+{hidden}</span>}
         </div>
-        <h3 className="mt-2.5 text-base font-display leading-snug text-ink">{title}</h3>
+        <h3 className="mt-2.5 text-base font-display leading-snug text-ink">
+          {onOpen ? (
+            <button type="button" onClick={onOpen} className="text-left after:absolute after:inset-0 after:rounded-3xl focus:outline-none">
+              {title}
+            </button>
+          ) : (
+            title
+          )}
+        </h3>
         <p className="mt-1 text-sm text-muted">
           수량 {quantity}
           {meta && <> · {meta}</>}
