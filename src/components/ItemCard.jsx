@@ -1,6 +1,6 @@
 import { formatCategory } from '../data/categories.js'
 import { availabilityLabel, daysLeft, isExpired } from '../data/dates.js'
-import { foodState, foodSummary } from '../data/food.js'
+import { expiryWarning, foodState, foodSummary } from '../data/food.js'
 import Avatar from './Avatar.jsx'
 import PhotoThumb from './PhotoThumb.jsx'
 import { chipClass } from './ui.js'
@@ -69,6 +69,9 @@ export default function ItemCard({ categories, title, quantity, meta, owner, sho
             {foodSummary(food)}
             {foodStatus === 'missing' && ' · 매칭 불가'}
           </p>
+        )}
+        {foodStatus === 'ok' && expiryWarning(food) && (
+          <p className="mt-1 self-start rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">소비기한 확인 필요</p>
         )}
         {foodStatus === 'none' && availableUntil && (
           <p

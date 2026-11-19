@@ -372,7 +372,12 @@ export default function DonorPage() {
               <p className="text-xs text-muted">
                 식품은 안전을 위해 추가 정보가 필요해요. 소비기한이 지나면 자동으로 매칭되지 않고, 한 번 등록한 식품 정보는 바꿀 수 없어요.
               </p>
-              <FoodFields values={values} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} errors={errors} />
+              <FoodFields
+                values={values}
+                onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))}
+                errors={errors}
+                categories={values.categories}
+              />
             </fieldset>
           )}
 

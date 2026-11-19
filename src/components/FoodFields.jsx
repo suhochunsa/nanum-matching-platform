@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FOOD_STORAGE, maxExpiryDate } from '../data/food.js'
+import { FOOD_STORAGE, expiryWarning } from '../data/food.js'
 import { todayString } from '../data/dates.js'
 import { MAX_PHOTO_MB } from '../data/validation.js'
 import FormField from './FormField.jsx'
@@ -58,10 +58,12 @@ function PhotoPicker({ id, file, onChange, error, placeholder, alt }) {
 /**
  * 식품 정보 입력칸: 소비기한, 소비기한 표시 사진, 개봉 여부, 보관 방법, 라벨 사진.
  * values: { foodExpiry, foodExpiryPhoto(File), foodOpened, foodStorage, foodLabel(File) }, onChange(field, value)
+ * categories: 고른 범주 (소비기한이 보통보다 긴지 경고하는 데 쓴다)
  * idPrefix: 한 화면에 여러 개가 있을 때 id가 겹치지 않게 (기부자 신청 폼은 '')
  */
-export default function FoodFields({ values, onChange, errors = {}, idPrefix = '' }) {
+export default function FoodFields({ values, onChange, errors = {}, idPrefix = '', categories = [] }) {
   const id = (name) => `${idPrefix}${name}`
+  const longExpiry = errors.foodExpiry ? null : expiryWarning({ categories, foodExpiry: values.foodExpiry })
 
   return (
     <div className="space-y-4">
@@ -69,19 +71,25 @@ export default function FoodFields({ values, onChange, errors = {}, idPrefix = '
         id={id('foodExpiry')}
         label="소비기한"
         required
-        hint="포장에 적힌 소비기한이에요. 이 날짜까지만 기부할 수 있고, 지나면 자동으로 매칭되지 않아요. (최대 3년 뒤까지)"
+        hint="포장에 적힌 소비기한이에요. 이 날짜까지만 기부할 수 있고, 지나면 자동으로 매칭되지 않아요."
         error={errors.foodExpiry}
       >
         <input
           id={id('foodExpiry')}
           type="date"
           min={todayString()}
-          max={maxExpiryDate()}
           value={values.foodExpiry}
           onChange={(e) => onChange('foodExpiry', e.target.value)}
           className={fieldClass(errors.foodExpiry)}
         />
       </FormField>
+
+      {longExpiry && (
+        <p role="note" className="rounded-2xl bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <strong>소비기한이 보통보다 길어요.</strong> 입력한 날짜({longExpiry.expiryLabel})까지 {longExpiry.left} 남았는데,{' '}
+          {longExpiry.typical}예요. 포장에 적힌 날짜를 다시 확인해 주세요. 설탕·소금처럼 원래 오래가는 식품이면 그대로 등록해도 돼요.
+        </p>
+      )}
 
       <FormField
         id={id('foodExpiryPhoto')}

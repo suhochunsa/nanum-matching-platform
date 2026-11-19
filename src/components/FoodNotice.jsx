@@ -1,5 +1,5 @@
 import { formatDate } from '../data/dates.js'
-import { COLD_STORAGE, foodState, foodSummary } from '../data/food.js'
+import { COLD_STORAGE, expiryWarning, foodState, foodSummary } from '../data/food.js'
 import PhotoThumb from './PhotoThumb.jsx'
 
 /** 사진 한 장 + 아래 작은 설명 */
@@ -19,6 +19,7 @@ function CaptionedPhoto({ src, alt, caption }) {
 export default function FoodNotice({ item }) {
   const state = foodState(item)
   if (state === 'none') return null
+  const longExpiry = expiryWarning(item)
   return (
     <div className="space-y-3 rounded-2xl bg-canvas-soft px-4 py-3 text-[13px]">
       <div className="space-y-1">
@@ -30,6 +31,11 @@ export default function FoodNotice({ item }) {
         {COLD_STORAGE.includes(item.foodStorage) && (
           <p className="text-xs font-semibold text-ink">
             {item.foodStorage === 'frozen' ? '냉동' : '냉장'} 식품이에요. 택배로 받으면 바로 상태를 확인하고 {item.foodStorage === 'frozen' ? '냉동' : '냉장'} 보관하세요.
+          </p>
+        )}
+        {longExpiry && (
+          <p className="text-xs font-semibold text-amber-700">
+            소비기한이 보통보다 길어요 ({longExpiry.left} 남음 · {longExpiry.typical}). 아래 소비기한 표시 사진의 날짜와 꼭 대조하세요.
           </p>
         )}
         {item.foodOpened && <p className="text-xs font-semibold text-red-600">개봉한 식품이에요. 받기 전에 상태를 꼭 확인하세요.</p>}

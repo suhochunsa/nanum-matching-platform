@@ -2,7 +2,7 @@
 // 오류가 없으면 빈 객체.
 
 import { todayString } from './dates.js'
-import { isFood, maxExpiryDate } from './food.js'
+import { isFood } from './food.js'
 
 export const MAX_PHOTO_MB = 5
 export const MAX_DETAIL_LENGTH = 300
@@ -91,9 +91,7 @@ export function validateFoodInfo(v) {
       ? '소비기한을 입력해 주세요.'
       : v.foodExpiry < todayString()
         ? '소비기한이 지난 식품은 기부할 수 없어요.'
-        : v.foodExpiry > maxExpiryDate()
-          ? '소비기한이 3년보다 길게 입력됐어요. 포장에 적힌 날짜를 다시 확인해 주세요.'
-          : undefined,
+        : undefined, // 너무 긴 소비기한은 막지 않고 화면에 경고만 한다 (food.js expiryWarning)
     foodExpiryPhoto: !v.foodExpiryPhoto
       ? '소비기한이 찍힌 부분을 가까이 찍어 올려 주세요. 기관이 입력한 날짜와 대조해요.'
       : checkPhoto(v.foodExpiryPhoto),

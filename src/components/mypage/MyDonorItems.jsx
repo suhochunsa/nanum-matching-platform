@@ -185,7 +185,13 @@ function FoodInfoFiller({ item, onSaved, onCancel }) {
       <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs text-red-700">
         식품 정보가 없어서 지금은 매칭되지 않아요. 아래 정보를 입력하면 매칭할 수 있어요. 한 번 저장하면 바꿀 수 없으니 포장을 보고 정확히 입력해 주세요.
       </p>
-      <FoodFields values={values} onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))} errors={errors} idPrefix={`${item.id}-`} />
+      <FoodFields
+        values={values}
+        onChange={(field, value) => setValues((v) => ({ ...v, [field]: value }))}
+        errors={errors}
+        idPrefix={`${item.id}-`}
+        categories={item.categories}
+      />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} disabled={busy} className={buttonClass('ghost', 'sm')}>

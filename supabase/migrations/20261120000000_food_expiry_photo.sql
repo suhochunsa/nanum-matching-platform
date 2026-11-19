@@ -1,7 +1,7 @@
 -- 식품 소비기한 표시 사진 (2026-11-20)
--- 소비기한을 비정상적으로 길게 입력하는 것을 막기 위해:
+-- 소비기한을 비정상적으로 길게 입력하는 것에 대비해:
 --  - 식품은 날짜가 찍힌 부분을 가까이 찍은 '소비기한 표시 사진'이 필수 (기관이 입력값과 대조)
---  - 소비기한은 오늘부터 3년 이내만 허용
+--  - 긴 소비기한 자체는 막지 않는다 (설탕·소금처럼 원래 오래가는 식품). 화면에서 식품 종류별로 경고만 한다
 --  - 소비기한 표시 사진이 없는 식품은 매칭 불가, 한 번 올린 사진은 바꿀 수 없음
 -- 여러 번 실행해도 같은 결과가 된다.
 begin;
@@ -31,10 +31,6 @@ begin
 
   if v_first_fill then
     if new.food_expiry < v_today then raise exception '소비기한이 지난 식품은 등록할 수 없어요.'; end if;
-    -- 비정상적으로 긴 소비기한 방지 (통조림·쌀처럼 오래가는 식품도 보통 3년 안)
-    if new.food_expiry > (v_today + interval '3 years')::date then
-      raise exception '소비기한이 3년보다 길게 입력됐어요. 포장에 적힌 날짜를 다시 확인해 주세요.';
-    end if;
     if new.food_opened is null then raise exception '식품은 개봉 여부를 골라야 해요.'; end if;
     if new.food_storage is null then raise exception '식품은 보관 방법을 골라야 해요.'; end if;
     if new.food_label_url !~ '^https://[a-z0-9]+\.supabase\.co/storage/v1/object/public/item-photos/[A-Za-z0-9-]+\.jpg$' then

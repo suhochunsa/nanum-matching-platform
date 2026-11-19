@@ -233,12 +233,12 @@ async function registerFood(db, f, o = {}) {
       const [row]=await admin(db,`select food_storage, food_opened, available_until = food_expiry same, food_expiry - current_date days from donor_items where id=$1`,[id])
       assert.deepEqual(row,{food_storage:'frozen',food_opened:false,same:true,days:10})
     })
-    await test('식품은 소비기한 표시 사진이 필수이고, 소비기한은 3년 이내만, 사진은 바꿀 수 없다',async()=>{
+    await test('식품은 소비기한 표시 사진이 필수이고, 긴 소비기한도 등록되며, 사진은 바꿀 수 없다',async()=>{
       const f=await foodFixture(db)
       await assert.rejects(registerFood(db,f,{expiryPhoto:'null'}),/소비기한이 찍힌 부분의 사진/)
       await assert.rejects(registerFood(db,f,{expiryPhoto:"'https://evil.com/x.jpg'"}),/소비기한이 찍힌 부분의 사진/)
-      await assert.rejects(registerFood(db,f,{expiry:"(current_date + interval '3 years 1 day')::date"}),/3년보다 길게/)
-      const id=await registerFood(db,f,{expiry:"(current_date + interval '3 years')::date"})
+      // 설탕처럼 오래가는 식품: 긴 소비기한도 막지 않는다 (화면에서 경고만)
+      const id=await registerFood(db,f,{expiry:"(current_date + interval '10 years')::date"})
       await assert.rejects(as(db,f.donor,`update donor_items set food_expiry_photo_url='${LABEL}' where id=$1`,[id]),/바꿀 수 없어요/)
       // 사진 없이 소비기한만 있는 식품(예전 데이터)은 매칭할 수 없다
       await admin(db,"set session_replication_role = replica")

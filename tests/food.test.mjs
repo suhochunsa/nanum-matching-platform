@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { daysFromToday } from '../src/data/dates.js'
-import { foodState, foodSummary, isFood, maxExpiryDate } from '../src/data/food.js'
+import { expiryWarning, foodState, foodSummary, isFood } from '../src/data/food.js'
 import { matchInstitutionToDonors } from '../src/data/matching.js'
 import { validateDonor, validateDonorItemEdit } from '../src/data/validation.js'
 
@@ -65,11 +65,28 @@ test('식품 요약과 마이페이지 마감일 제한', () => {
   assert.equal(validateDonorItemEdit({ ...edit, availableUntil: daysFromToday(6) }).availableUntil, undefined)
 })
 
-test('소비기한은 3년 이내만, 소비기한 사진이 없으면 매칭 불가', () => {
-  assert.equal(validateDonor({ ...base, foodExpiry: maxExpiryDate() }).foodExpiry, undefined)
-  const [y, m, d] = maxExpiryDate().split('-')
-  const tooLate = `${y}-${m}-${String(Number(d) + 1).padStart(2, '0')}`
-  assert.match(validateDonor({ ...base, foodExpiry: tooLate > maxExpiryDate() ? tooLate : `${Number(y) + 1}-01-01` }).foodExpiry, /3년보다 길게/)
+test('긴 소비기한은 막지 않고, 소비기한 사진이 없으면 매칭 불가', () => {
+  assert.equal(validateDonor({ ...base, foodExpiry: daysFromToday(365 * 10) }).foodExpiry, undefined)
   assert.match(validateDonor({ ...base, foodExpiryPhoto: null }).foodExpiryPhoto, /소비기한이 찍힌 부분/)
   assert.equal(foodState({ categories: ['식품/통조림'], foodExpiry: daysFromToday(5) }), 'missing')
+})
+
+test('소비기한이 식품 종류의 보통 기간보다 길면 경고한다', () => {
+  const at = (categories, days) => expiryWarning({ categories, foodExpiry: daysFromToday(days) })
+  // 라면·면류는 보통 1년 이내
+  assert.equal(at(['식품/라면·면류'], 300), null)
+  assert.deepEqual(at(['식품/라면·면류'], 365 * 4), {
+    left: '약 4년', typical: '라면·면류는 보통 1년 이내', expiryLabel: expiryWarning({ categories: ['식품/라면·면류'], foodExpiry: daysFromToday(365 * 4) }).expiryLabel,
+  })
+  assert.match(at(['식품/라면·면류'], 365 * 4).expiryLabel, /^\d{4}년 \d+월 \d+일$/)
+  // 통조림은 보통 5년 이내라 4년은 괜찮다
+  assert.equal(at(['식품/통조림'], 365 * 4), null)
+  assert.equal(at(['식품/통조림'], 365 * 6).typical, '통조림은 보통 5년 이내')
+  // 받침 있는 말은 '은'
+  assert.equal(at(['식품/즉석식품'], 800).typical, '즉석식품은 보통 1년 이내')
+  // 여러 범주를 고르면 가장 긴 기준
+  assert.equal(at(['식품/라면·면류', '식품/통조림'], 365 * 4), null)
+  // 식품이 아니거나 소비기한이 없으면 경고 없음
+  assert.equal(at(['의류/아우터'], 365 * 9), null)
+  assert.equal(expiryWarning({ categories: ['식품/통조림'], foodExpiry: '' }), null)
 })
