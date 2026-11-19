@@ -99,7 +99,9 @@ export default function MyMatchRequests({ requests, reload }) {
                 <div>
                   <h3 className="font-display text-lg">{row.item_title}</h3>
                   <p className="mt-1 text-sm text-muted">{row.incoming ? '보낸 계정' : '받는 계정'}: {row.other_name}</p>
-                  <p className="text-xs text-muted">기관의 필요 물품: {row.need_title}</p>
+                  <p className="text-xs text-muted">
+                    {row.need_direct ? '기관이 이 물품을 직접 요청했어요' : `기관의 필요 물품: ${row.need_title}`}
+                  </p>
                 </div>
                 <span className="flex shrink-0 flex-col items-end gap-1">
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${row.status === 'completed' ? 'bg-ink text-white' : 'bg-canvas-soft'}`}>

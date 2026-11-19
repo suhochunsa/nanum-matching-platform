@@ -90,6 +90,8 @@ export async function loadData() {
         .from('institution_needs')
         .select('id, title, categories, quantity, requested_at, status, institutions (name, owner_id, owner:profiles (avatar_url))')
         .eq('status', 'open')
+        // 기관이 물품을 직접 요청할 때 자동으로 만든 필요 물품은 목록에 보여주지 않는다
+        .is('direct_item_id', null)
         .order('created_at', { ascending: false }),
       db.from('institutions').select('name, location, phone, hours, methods'),
     ])
@@ -227,12 +229,13 @@ export async function deleteDonorItem(id) {
 export async function fetchMyInstitution(userId) {
   const { data, error } = await requireClient()
     .from('institutions')
-    .select('id, name, location, phone, hours, methods, institution_needs (id, title, categories, quantity, status, requested_at, created_at)')
+    .select('id, name, location, phone, hours, methods, institution_needs (id, title, categories, quantity, status, requested_at, created_at, direct_item_id)')
     .eq('owner_id', userId)
     .maybeSingle()
   if (error) throw new Error(friendlyError(error))
   if (!data) return null
-  const needs = [...data.institution_needs]
+  const needs = data.institution_needs
+    .filter((n) => !n.direct_item_id) // 직접 요청용 필요 물품은 요청함에서 관리
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .map((n) => ({
       id: n.id,
@@ -333,4 +336,11 @@ export async function fillFoodInfo(itemId, fields) {
   if (error) throw new Error(friendlyError(error))
   if (data.length === 0) throw new Error('식품 정보를 입력할 권한이 없거나 이미 지워진 물품이에요.')
   return data[0].available_until
+}
+
+/** 기관이 기부 물품을 직접 요청 (DB가 직접 요청용 필요 물품을 만들어 연결한다) */
+export async function requestItemDirect(itemId, method) {
+  const { data, error } = await requireClient().rpc('request_item_direct', { p_item_id: itemId, p_method: method })
+  if (error) throw new Error(friendlyError(error))
+  return data
 }

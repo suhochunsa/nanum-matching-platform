@@ -184,23 +184,3 @@ export function itemRequestBlock(item) {
   }
   return ''
 }
-
-/**
- * 기부 물품 하나를 기관의 필요 물품들과 비교해 점수 순으로 돌려준다.
- * 조건(범주 일치 또는 이름 유사도)이 맞지 않는 필요 물품은 score가 null이고 맨 뒤에 온다.
- */
-export function rankNeedsForItem(item, needs) {
-  return needs
-    .map((need) => {
-      const scored = scoreMatch({
-        categories: item.categories,
-        title: item.title,
-        supplyQty: item.quantity,
-        needQty: need.quantity,
-        condition: item.condition,
-        target: need,
-      })
-      return scored ?? { ...need, score: null }
-    })
-    .sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
-}

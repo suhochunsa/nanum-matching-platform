@@ -171,7 +171,7 @@ export default function HomePage() {
         {tab === 'items' && data && (
           <p className="mt-4 text-xs text-muted">
             {profile?.role === 'institution'
-              ? '물품을 누르면 자세한 정보를 보고, 우리 기관의 필요 물품과 연결해 바로 매칭을 요청할 수 있어요.'
+              ? '물품을 누르면 자세한 정보를 보고 바로 매칭을 요청할 수 있어요.'
               : '물품을 누르면 자세한 정보를 볼 수 있어요. 기관 계정은 여기서 바로 매칭을 요청할 수 있어요.'}
           </p>
         )}

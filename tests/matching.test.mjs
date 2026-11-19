@@ -18,7 +18,7 @@ async function database() {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   // 매칭 관련 마이그레이션은 순서대로 다시 실행해도 같은 상태를 유지한다.
-  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql', '20261118000000_allow_cold_parcel.sql']) {
+  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql', '20261118000000_allow_cold_parcel.sql', '20261119000000_direct_request.sql']) {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   return db
@@ -195,6 +195,8 @@ const db = await database()
       assert.equal((await dashboard(db,f.donor)).creditTotal,50)
       await db.exec('reset role')
       await db.exec(readFileSync(new URL('20261116000000_delivery_completion.sql', migrationDir), 'utf8'))
+      // 위 마이그레이션이 요청함 함수를 덮어쓰므로, 그 뒤에 나온 마이그레이션을 다시 적용해 최신 상태로 되돌린다
+      await db.exec(readFileSync(new URL('20261119000000_direct_request.sql', migrationDir), 'utf8'))
       assert.equal((await dashboard(db,f.donor)).creditTotal,0)
       await finish(db,f,id)
       const mine=await dashboard(db,f.donor); assert.equal(mine.creditTotal,50); assert.equal(mine.creditEntries.length,1)
@@ -275,6 +277,45 @@ async function registerFood(db, f, o = {}) {
       assert.equal((await admin(db,'select available_until = food_expiry same from donor_items where id=$1',[f.item]))[0].same,true)
       const m=await request(db,f); await respond(db,f.org,m,'accept'); await finish(db,f,m)
       assert.equal((await dashboard(db,f.donor)).creditTotal,45) // 식품 15 + 수량 3 × 10
+    })
+
+// ---- 기관의 직접 요청 --------------------------------------------------------
+async function direct(db,uid,itemId,method='pickup') { return (await as(db,uid,'select public.request_item_direct($1,$2) id',[itemId,method]))[0].id }
+
+    await test('기관은 필요 물품 없이 기부 물품을 직접 요청하고, 수락·전달 완료 후 적립된다',async()=>{
+      const f=await fixture(db)
+      const id=await direct(db,f.org,f.item)
+      const [m]=await admin(db,'select m.status, n.direct_item_id, n.title, n.quantity from matches m join institution_needs n on n.id=m.need_id where m.id=$1',[id])
+      assert.deepEqual(m,{status:'requested',direct_item_id:f.item,title:'겨울 패딩',quantity:3})
+      const box=await dashboard(db,f.donor)
+      assert.equal(box.requests[0].incoming,true); assert.equal(box.requests[0].need_direct,true)
+      assert.equal((await dashboard(db,f.org)).requests[0].need_direct,true)
+      await respond(db,f.donor,id,'accept'); await finish(db,f,id)
+      assert.equal((await dashboard(db,f.donor)).creditTotal,50)
+    })
+    await test('직접 요청: 거절 후 재요청은 같은 필요 물품을 다시 쓰고, 대기 중 중복 요청은 막는다',async()=>{
+      const f=await fixture(db)
+      const id=await direct(db,f.org,f.item)
+      await assert.rejects(direct(db,f.org,f.item),/이미 대기/)
+      await respond(db,f.donor,id,'reject')
+      assert.equal(await direct(db,f.org,f.item),id)
+      assert.equal((await admin(db,'select count(*)::int n from institution_needs where direct_item_id=$1',[f.item]))[0].n,1)
+    })
+    await test('직접 요청: 기부자·비회원·기관 정보 없는 기관은 못 하고, 실패하면 필요 물품도 남지 않는다',async()=>{
+      const f=await fixture(db)
+      await assert.rejects(direct(db,f.donor,f.item),/기관 계정만/)
+      await assert.rejects(as(db,null,'select public.request_item_direct($1,$2)',[f.item,'pickup'],'anon'),/permission denied/)
+      const [newOrg]=await admin(db,`insert into auth.users(raw_user_meta_data) values ($1) returning id`,[{role:'institution',org_name:`새기관${serial}`}])
+      await assert.rejects(direct(db,newOrg.id,f.item),/기관 정보/)
+      await assert.rejects(direct(db,f.org,f.item,'parcel'),/전달 방법/)
+      await admin(db,'update donor_items set owner_id=null where id=$1',[f.item])
+      await assert.rejects(direct(db,f.org,f.item),/가입한 계정/)
+      assert.equal((await admin(db,'select count(*)::int n from institution_needs where direct_item_id=$1',[f.item]))[0].n,0)
+    })
+    await test('직접 요청도 소비기한이 지나거나 식품 정보가 없는 식품은 막는다',async()=>{
+      const f=await foodFixture(db)
+      await admin(db,"update donor_items set title='봉지 라면', categories=array['식품/라면·면류'] where id=$1",[f.item])
+      await assert.rejects(direct(db,f.org,f.item),/식품 정보를 먼저/)
     })
 
 await test('운영 검증 SQL도 동일하게 통과하고 임시 데이터를 남기지 않는다', async () => {

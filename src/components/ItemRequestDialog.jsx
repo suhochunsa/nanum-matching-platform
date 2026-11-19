@@ -4,8 +4,8 @@ import { formatCategory } from '../data/categories.js'
 import { availabilityLabel } from '../data/dates.js'
 import { commonMethods, methodLabel } from '../data/delivery.js'
 import { isFood } from '../data/food.js'
-import { itemRequestBlock, rankNeedsForItem } from '../data/matching.js'
-import { requestItemMatch } from '../data/store.js'
+import { itemRequestBlock } from '../data/matching.js'
+import { requestItemDirect } from '../data/store.js'
 import { useAuth } from '../lib/authContext.js'
 import FoodNotice from './FoodNotice.jsx'
 import PhotoThumb from './PhotoThumb.jsx'
@@ -14,8 +14,8 @@ import { buttonClass, chipClass } from './ui.js'
 /**
  * 홈 화면에서 기부 물품 카드를 눌렀을 때 뜨는 상세창.
  * - 누구나: 물품 정보(사진·범주·수량·상태·지역·전달 방법·기부 가능 기간·식품 정보)
- * - 기관 계정: 내 필요 물품 하나와 전달 방법을 골라 바로 매칭 요청
- * data: store.js loadData() 결과 (내 필요 물품·기관 정보를 찾는 데 쓴다)
+ * - 기관 계정: 전달 방법만 골라 이 물품을 바로 매칭 요청
+ * data: store.js loadData() 결과 (우리 기관이 받을 수 있는 전달 방법을 찾는 데 쓴다)
  */
 export default function ItemRequestDialog({ item, data, onClose }) {
   const closeRef = useRef(null)
@@ -134,28 +134,27 @@ function RequestSection({ item, data }) {
   const blocked = itemRequestBlock(item)
   if (blocked) return <p className="text-sm font-semibold text-red-600">{blocked}</p>
 
-  return <InstitutionRequestForm item={item} data={data} orgName={profile.org_name} userId={profile.id} />
+  return <InstitutionRequestForm item={item} data={data} orgName={profile.org_name} />
 }
 
-/** 기관 계정: 내 필요 물품 하나 + 전달 방법을 골라 요청 */
-function InstitutionRequestForm({ item, data, orgName, userId }) {
-  const myNeeds = data.institutionNeeds.filter((n) => n.ownerId === userId && (n.status ?? 'open') === 'open')
-  const ranked = rankNeedsForItem(item, myNeeds)
-  const myMethods = data.institutions.find((i) => i.name === orgName)?.methods ?? []
-  const methods = commonMethods(item.methods, myMethods)
-
-  const [needId, setNeedId] = useState(ranked.find((n) => n.score !== null)?.id ?? '')
+/** 기관 계정: 전달 방법만 골라 이 물품을 직접 요청 */
+function InstitutionRequestForm({ item, data, orgName }) {
+  const myOrg = data.institutions.find((i) => i.name === orgName)
+  const methods = commonMethods(item.methods, myOrg?.methods ?? [])
   const [method, setMethod] = useState(methods[0] ?? '')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
-  if (myNeeds.length === 0) {
+  // 기관 정보(위치·연락처·받는 방법)는 처음 필요 물품을 등록할 때 만들어진다
+  if (!myOrg) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-muted">요청하려면 이 물품과 연결할 필요 물품이 있어야 해요. 먼저 필요 물품을 등록해 주세요.</p>
+        <p className="text-sm text-muted">
+          요청하려면 기관 정보(위치·연락처·받을 수 있는 방법)가 필요해요. 필요 물품 등록 화면에서 기관 정보를 한 번 입력해 주세요.
+        </p>
         <Link to="/institution" className={buttonClass('primary', 'md')}>
-          필요 물품 등록하기
+          기관 정보 입력하러 가기
         </Link>
       </div>
     )
@@ -180,11 +179,11 @@ function InstitutionRequestForm({ item, data, orgName, userId }) {
   }
 
   async function send() {
-    if (busy || !needId) return
+    if (busy) return
     setBusy(true)
     setError('')
     try {
-      await requestItemMatch(item.id, needId, method)
+      await requestItemDirect(item.id, method)
       setSent(true)
     } catch (err) {
       setError(err.message)
@@ -193,83 +192,37 @@ function InstitutionRequestForm({ item, data, orgName, userId }) {
     }
   }
 
-  const noneEligible = !ranked.some((n) => n.score !== null)
-
   return (
     <div className="space-y-4">
-      <fieldset>
-        <legend className="mb-2 text-sm font-semibold text-ink">어떤 필요 물품으로 받을까요?</legend>
-        <ul className="space-y-2">
-          {ranked.map((need) => {
-            const eligible = need.score !== null
-            return (
-              <li key={need.id}>
-                <label
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-colors ${
-                    !eligible ? 'cursor-not-allowed bg-canvas-soft text-faint' : needId === need.id ? 'cursor-pointer bg-canvas ring-2 ring-ink' : 'cursor-pointer bg-field hover:bg-hairline'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`need-${item.id}`}
-                    value={need.id}
-                    checked={needId === need.id}
-                    disabled={!eligible}
-                    onChange={() => setNeedId(need.id)}
-                    className="accent-ink"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{need.title}</span>
-                    <span className="block text-xs">
-                      {need.categories.map(formatCategory).join(', ')} · 필요 수량 {need.quantity}
-                      {!eligible && ' · 범주·이름이 맞지 않아 요청할 수 없어요'}
-                    </span>
-                  </span>
-                  {eligible && (
-                    <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold tabular-nums text-white">{need.score}점</span>
-                  )}
-                </label>
-              </li>
-            )
-          })}
-        </ul>
-      </fieldset>
-
-      {noneEligible ? (
-        <p className="text-sm text-red-600">이 물품과 범주나 이름이 맞는 필요 물품이 없어요. 비슷한 필요 물품을 먼저 등록해 주세요.</p>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor={`method-${item.id}`} className="text-sm font-semibold text-ink">
-              전달 방법
-            </label>
-            <select
-              id={`method-${item.id}`}
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              disabled={busy}
-              className="rounded-full bg-field px-4 py-2 text-sm"
-            >
-              {methods.map((m) => (
-                <option key={m} value={m}>
-                  {methodLabel(m)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-muted">
-            물품 전체 {item.quantity}개를 요청해요. 기부자가 수락하면 매칭이 확정되고, 물품을 주고받은 뒤 양쪽이 모두 '전달 완료'를 누르면 끝나요.
-          </p>
-          {error && (
-            <p role="alert" className="text-sm text-red-600">
-              {error}
-            </p>
-          )}
-          <button type="button" onClick={send} disabled={busy || !needId} className={`${buttonClass('primary', 'lg')} w-full`}>
-            {busy ? '요청 보내는 중…' : '이 물품 매칭 요청하기'}
-          </button>
-        </>
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor={`method-${item.id}`} className="text-sm font-semibold text-ink">
+          전달 방법
+        </label>
+        <select
+          id={`method-${item.id}`}
+          value={method}
+          onChange={(e) => setMethod(e.target.value)}
+          disabled={busy}
+          className="rounded-full bg-field px-4 py-2 text-sm"
+        >
+          {methods.map((m) => (
+            <option key={m} value={m}>
+              {methodLabel(m)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="text-xs text-muted">
+        {orgName} 이름으로 물품 전체 {item.quantity}개를 요청해요. 기부자가 수락하면 매칭이 확정되고, 물품을 주고받은 뒤 양쪽이 모두 '전달 완료'를 누르면 끝나요.
+      </p>
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
       )}
+      <button type="button" onClick={send} disabled={busy} className={`${buttonClass('primary', 'lg')} w-full`}>
+        {busy ? '요청 보내는 중…' : '이 물품 받고 싶어요 · 매칭 요청'}
+      </button>
     </div>
   )
 }

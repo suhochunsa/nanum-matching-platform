@@ -245,12 +245,16 @@ npm run dev
 - 한 번 입력한 식품 정보는 바꿀 수 없음(소비기한 연장 방지). 정보가 없는 기존 식품은 마이페이지 '수정'에서 한 번 채움
 - 검증: `npm test` 27개 (DB 규칙은 matching.test.mjs, 화면 규칙은 food.test.mjs)
 
-## 홈에서 기관이 바로 요청 (2026-11-19, `src/components/ItemRequestDialog.jsx`)
+## 홈에서 기관이 바로 요청 (2026-11-19, `ItemRequestDialog.jsx`, `20261119000000_direct_request.sql`)
 
 - 홈 '기부 물품' 카드를 누르면 상세창(사진·범주·수량·상태·전달 방법·기부 가능 기간·식품 정보·라벨)
   - 카드는 제목 버튼의 누르는 영역을 카드 전체로 넓힘(사진의 '크게 보기' 버튼은 위에 따로 동작)
-- 기관 계정: 내 '모집 중' 필요 물품을 점수 순으로 보여주고(조건 안 맞는 건 비활성), 전달 방법을 골라 request_item_match 호출
-  - 요청 불가 사유(예시 물품·이미 매칭·기간 만료·안전하지 않은 식품)는 `matching.js` itemRequestBlock
-  - 필요 물품이 없으면 등록 화면 안내, 전달 방법이 안 겹치면 프로필 수정 안내
+- 기관 계정: 전달 방법만 골라 `request_item_direct(item, method)`로 직접 요청
+  - DB가 그 물품과 같은 '직접 요청용 필요 물품'(institution_needs.direct_item_id)을 만들어 매칭에 연결
+  - 직접 요청용 필요 물품은 홈·매칭 결과·마이페이지 필요 물품 목록에서 숨김(store.js에서 direct_item_id is null)
+  - 같은 기관이 같은 물품을 다시 요청하면 그 필요 물품을 재사용. 요청이 실패하면 만든 필요 물품도 롤백
+  - 기관 정보(institutions 행)가 없으면 요청 불가 → 필요 물품 등록 화면에서 기관 정보를 한 번 입력
+  - 요청함 카드에 '기관이 이 물품을 직접 요청했어요' 표시(get_my_matching_dashboard의 need_direct)
+- 요청 불가 사유(예시 물품·이미 매칭·기간 만료·안전하지 않은 식품)는 `matching.js` itemRequestBlock
 - 로그아웃: 로그인 안내 / 기부자: 상세 정보만(내 물품이면 마이페이지 링크)
-- 검증: `npm test` 29개 (`tests/home-request.test.mjs`)
+- 검증: `npm test` 32개
