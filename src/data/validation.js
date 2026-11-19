@@ -2,7 +2,7 @@
 // 오류가 없으면 빈 객체.
 
 import { todayString } from './dates.js'
-import { isFood } from './food.js'
+import { isFood, maxExpiryDate } from './food.js'
 
 export const MAX_PHOTO_MB = 5
 export const MAX_DETAIL_LENGTH = 300
@@ -84,17 +84,22 @@ export function validateDonor(v) {
 }
 
 // 식품 정보 (기부자 신청 폼, 마이페이지 '식품 정보 입력'에서 함께 쓴다)
-// v: { foodExpiry: 'YYYY-MM-DD', foodOpened: 'unopened' | 'opened' | '', foodStorage, foodLabel: File | null }
+// v: { foodExpiry: 'YYYY-MM-DD', foodOpened: 'unopened' | 'opened' | '', foodStorage, foodLabel: File | null, foodExpiryPhoto: File | null }
 export function validateFoodInfo(v) {
   return compact({
     foodExpiry: !v.foodExpiry
       ? '소비기한을 입력해 주세요.'
       : v.foodExpiry < todayString()
         ? '소비기한이 지난 식품은 기부할 수 없어요.'
-        : undefined,
+        : v.foodExpiry > maxExpiryDate()
+          ? '소비기한이 3년보다 길게 입력됐어요. 포장에 적힌 날짜를 다시 확인해 주세요.'
+          : undefined,
+    foodExpiryPhoto: !v.foodExpiryPhoto
+      ? '소비기한이 찍힌 부분을 가까이 찍어 올려 주세요. 기관이 입력한 날짜와 대조해요.'
+      : checkPhoto(v.foodExpiryPhoto),
     foodOpened: v.foodOpened ? undefined : '개봉 여부를 골라 주세요.',
     foodStorage: v.foodStorage ? undefined : '보관 방법을 골라 주세요.',
-    foodLabel: !v.foodLabel ? '식품 라벨 사진을 올려 주세요. (제품명·소비기한·원재료가 보이게)' : checkPhoto(v.foodLabel),
+    foodLabel: !v.foodLabel ? '식품 라벨 사진을 올려 주세요. (제품명·원재료가 보이게)' : checkPhoto(v.foodLabel),
   })
 }
 

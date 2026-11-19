@@ -133,7 +133,7 @@ function DonorItemEditor({ item, onSaved, onCancel }) {
 
 /** 식품 정보가 없는 기존 식품: 소비기한·개봉 여부·보관 방법·라벨을 한 번 입력 (이후에는 바꿀 수 없음) */
 function FoodInfoFiller({ item, onSaved, onCancel }) {
-  const [values, setValues] = useState({ foodExpiry: '', foodOpened: '', foodStorage: '', foodLabel: null })
+  const [values, setValues] = useState({ foodExpiry: '', foodExpiryPhoto: null, foodOpened: '', foodStorage: '', foodLabel: null })
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -152,17 +152,28 @@ function FoodInfoFiller({ item, onSaved, onCancel }) {
     setBusy(true)
     setError('')
     try {
-      let blob
-      try { blob = await compressImage(values.foodLabel, { maxSize: 1280, quality: 0.85 }) }
-      catch { throw new Error('라벨 사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.') }
+      const upload = async (file, what) => {
+        let blob
+        try { blob = await compressImage(file, { maxSize: 1280, quality: 0.85 }) }
+        catch { throw new Error(`${what}을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.`) }
+        return uploadItemPhoto(blob)
+      }
       const fields = {
         foodExpiry: values.foodExpiry,
         foodOpened: values.foodOpened === 'opened',
         foodStorage: values.foodStorage,
-        foodLabelUrl: await uploadItemPhoto(blob),
+        foodLabelUrl: await upload(values.foodLabel, '라벨 사진'),
+        foodExpiryPhotoUrl: await upload(values.foodExpiryPhoto, '소비기한 표시 사진'),
       }
       const availableUntil = await fillFoodInfo(item.id, fields)
-      onSaved({ foodExpiry: fields.foodExpiry, foodOpened: fields.foodOpened, foodStorage: fields.foodStorage, foodLabel: fields.foodLabelUrl, availableUntil })
+      onSaved({
+        foodExpiry: fields.foodExpiry,
+        foodOpened: fields.foodOpened,
+        foodStorage: fields.foodStorage,
+        foodLabel: fields.foodLabelUrl,
+        foodExpiryPhoto: fields.foodExpiryPhotoUrl,
+        availableUntil,
+      })
     } catch (err) {
       setError(err.message)
       setBusy(false)

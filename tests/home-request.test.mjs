@@ -16,6 +16,7 @@ test('요청할 수 없는 물품은 이유를 알려준다', () => {
   assert.match(itemRequestBlock({ ...item, availableUntil: daysFromToday(-1) }), /기간이 지난/)
   const food = { ...item, title: '봉지 라면', categories: ['식품/라면·면류'] }
   assert.match(itemRequestBlock(food), /정보가 없는 식품/)
-  assert.match(itemRequestBlock({ ...food, foodExpiry: daysFromToday(-1), availableUntil: daysFromToday(5) }), /소비기한이 지난/)
-  assert.equal(itemRequestBlock({ ...food, foodExpiry: daysFromToday(5), availableUntil: daysFromToday(5) }), '')
+  assert.match(itemRequestBlock({ ...food, foodExpiry: daysFromToday(-1), foodExpiryPhoto: 'x.jpg', availableUntil: daysFromToday(5) }), /소비기한이 지난/)
+  assert.equal(itemRequestBlock({ ...food, foodExpiry: daysFromToday(5), foodExpiryPhoto: 'x.jpg', availableUntil: daysFromToday(5) }), '')
+  assert.match(itemRequestBlock({ ...food, foodExpiry: daysFromToday(5), availableUntil: daysFromToday(5) }), /정보가 없는 식품/)
 })

@@ -1,6 +1,6 @@
 import { parentOf, parentsOf } from './categories.js'
 import { isExpired } from './dates.js'
-import { isFoodMatchable } from './food.js'
+import { foodState, isFoodMatchable } from './food.js'
 
 // 매칭 점수 = 아래 네 항목(각 0~1)을 가중합한 값(0~100점).
 export const WEIGHTS = { category: 0.35, name: 0.3, quantity: 0.2, condition: 0.15 }
@@ -180,7 +180,9 @@ export function itemRequestBlock(item) {
   if ((item.status ?? 'available') !== 'available') return '이미 매칭됐거나 기부가 끝난 물품이에요.'
   if (isExpired(item.availableUntil)) return '기부 가능 기간이 지난 물품이에요.'
   if (!isFoodMatchable(item)) {
-    return item.foodExpiry ? '소비기한이 지난 식품이라 매칭할 수 없어요.' : '소비기한·라벨 정보가 없는 식품이라 매칭할 수 없어요.'
+    return foodState(item) === 'expired'
+      ? '소비기한이 지난 식품이라 매칭할 수 없어요.'
+      : '소비기한·사진 정보가 없는 식품이라 매칭할 수 없어요. 기부자가 마이페이지에서 식품 정보를 입력해야 해요.'
   }
   return ''
 }

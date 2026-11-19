@@ -35,6 +35,7 @@ function toDonorItem(row) {
     foodOpened: row.food_opened ?? null,
     foodStorage: row.food_storage ?? null,
     foodLabel: row.food_label_url ?? '',
+    foodExpiryPhoto: row.food_expiry_photo_url ?? '',
   }
 }
 
@@ -135,6 +136,7 @@ export async function registerDonorItem(item) {
     p_food_opened: item.foodOpened ?? null,
     p_food_storage: item.foodStorage ?? null,
     p_food_label_url: item.foodLabelUrl ?? null,
+    p_food_expiry_photo_url: item.foodExpiryPhotoUrl ?? null,
   })
   if (error) throw new Error(friendlyError(error))
   return data
@@ -320,7 +322,7 @@ export async function completeItemMatch(matchId) {
 
 /**
  * 기존 식품에 식품 정보를 한 번 채운다 (마이페이지). 한 번 채우면 바꿀 수 없고, 기부 가능 마감일은 소비기한까지로 맞춰진다.
- * fields: { foodExpiry, foodOpened(boolean), foodStorage, foodLabelUrl }
+ * fields: { foodExpiry, foodOpened(boolean), foodStorage, foodLabelUrl, foodExpiryPhotoUrl }
  */
 export async function fillFoodInfo(itemId, fields) {
   const { data, error } = await requireClient()
@@ -330,6 +332,7 @@ export async function fillFoodInfo(itemId, fields) {
       food_opened: fields.foodOpened,
       food_storage: fields.foodStorage,
       food_label_url: fields.foodLabelUrl,
+      food_expiry_photo_url: fields.foodExpiryPhotoUrl,
     })
     .eq('id', itemId)
     .select('available_until')

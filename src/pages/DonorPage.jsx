@@ -40,6 +40,7 @@ const INITIAL_VALUES = {
   foodOpened: '', // 'unopened' | 'opened'
   foodStorage: '', // 'room' | 'fridge' | 'frozen'
   foodLabel: null,
+  foodExpiryPhoto: null,
 }
 
 export default function DonorPage() {
@@ -131,12 +132,17 @@ export default function DonorPage() {
         photoUrl = await uploadItemPhoto(blob)
       }
       let foodLabelUrl = null
+      let foodExpiryPhotoUrl = null
       if (s.isFood) {
-        let blob
-        // 라벨 글씨가 읽히도록 일반 사진보다 크게 줄인다
-        try { blob = await compressImage(s.foodLabel, { maxSize: 1280, quality: 0.85 }) }
-        catch { throw new Error('라벨 사진을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.') }
-        foodLabelUrl = await uploadItemPhoto(blob)
+        // 라벨·날짜 글씨가 읽히도록 일반 사진보다 크게 줄인다
+        const upload = async (file, what) => {
+          let blob
+          try { blob = await compressImage(file, { maxSize: 1280, quality: 0.85 }) }
+          catch { throw new Error(`${what}을 읽지 못했어요. JPG나 PNG 사진으로 다시 골라 주세요.`) }
+          return uploadItemPhoto(blob)
+        }
+        foodLabelUrl = await upload(s.foodLabel, '라벨 사진')
+        foodExpiryPhotoUrl = await upload(s.foodExpiryPhoto, '소비기한 표시 사진')
       }
       const itemId = await registerDonorItem({
         donorName: s.donorName, donorPhone: s.donorPhone, title: s.title,
@@ -148,6 +154,7 @@ export default function DonorPage() {
           foodOpened: s.foodOpened === 'opened',
           foodStorage: s.foodStorage,
           foodLabelUrl,
+          foodExpiryPhotoUrl,
         }),
       })
       setResult((current) => current?.id === snapshot.id ? { ...current, itemId } : current)
@@ -428,6 +435,7 @@ export default function DonorPage() {
                       ? [
                           ['식품', foodSummary({ ...result.submitted, foodOpened: result.submitted.foodOpened === 'opened' })],
                           ['라벨 사진', result.submitted.foodLabel?.name ?? '없음'],
+                          ['소비기한 사진', result.submitted.foodExpiryPhoto?.name ?? '없음'],
                         ]
                       : [['기부 가능 기간', availabilityLabel(result.submitted.availableUntil)]]),
                     ['상세 정보', result.submitted.detail || '없음'],
