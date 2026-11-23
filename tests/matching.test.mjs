@@ -18,7 +18,7 @@ async function database() {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   // 매칭 관련 마이그레이션은 순서대로 다시 실행해도 같은 상태를 유지한다.
-  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql', '20261118000000_allow_cold_parcel.sql', '20261119000000_direct_request.sql', '20261120000000_food_expiry_photo.sql']) {
+  for (const file of ['20261101010000_match_requests_credits.sql', '20261116000000_delivery_completion.sql', '20261117000000_food_safety.sql', '20261118000000_allow_cold_parcel.sql', '20261119000000_direct_request.sql', '20261120000000_food_expiry_photo.sql', '20261123000000_confirmed_cancel_notify.sql']) {
     await db.exec(readFileSync(new URL(file, migrationDir), 'utf8'))
   }
   return db
@@ -196,7 +196,9 @@ const db = await database()
       await db.exec('reset role')
       await db.exec(readFileSync(new URL('20261116000000_delivery_completion.sql', migrationDir), 'utf8'))
       // 위 마이그레이션이 요청함 함수를 덮어쓰므로, 그 뒤에 나온 마이그레이션을 다시 적용해 최신 상태로 되돌린다
-      await db.exec(readFileSync(new URL('20261119000000_direct_request.sql', migrationDir), 'utf8'))
+      for (const later of ['20261119000000_direct_request.sql', '20261123000000_confirmed_cancel_notify.sql']) {
+        await db.exec(readFileSync(new URL(later, migrationDir), 'utf8'))
+      }
       assert.equal((await dashboard(db,f.donor)).creditTotal,0)
       await finish(db,f,id)
       const mine=await dashboard(db,f.donor); assert.equal(mine.creditTotal,50); assert.equal(mine.creditEntries.length,1)
@@ -331,6 +333,78 @@ async function direct(db,uid,itemId,method='pickup') { return (await as(db,uid,'
       await admin(db,"update donor_items set title='봉지 라면', categories=array['식품/라면·면류'] where id=$1",[f.item])
       await assert.rejects(direct(db,f.org,f.item),/식품 정보를 먼저/)
     })
+
+async function cancelConfirmed(db,uid,id) { return (await as(db,uid,'select public.cancel_confirmed_match($1) result',[id]))[0].result }
+const state = async (f) => (await admin(db,`select (select status from donor_items where id=$1) item,(select status from institution_needs where id=$2) need,(select quantity from institution_needs where id=$2) need_qty`,[f.item,f.need]))[0]
+
+await test('기부자 연락처를 미리 보는 함수는 없다 (연락처는 확정 후 요청함에서만)', async () => {
+  const f=await fixture(db)
+  await assert.rejects(as(db,f.org,'select public.get_donor_contact($1,$2)',[f.item,f.need]),/does not exist/)
+  const id=await request(db,f)
+  assert.equal((await dashboard(db,f.org)).requests[0].contact_phone,null)
+  await respond(db,f.org,id,'accept')
+  assert.equal((await dashboard(db,f.org)).requests[0].contact_phone,'010-0000-0000')
+})
+
+await test('확정된 매칭이 걸린 물품·필요 물품은 삭제할 수 없고, 취소하면 삭제할 수 있다', async () => {
+  const f=await fixture(db,{quantity:2,needQuantity:5}); const id=await request(db,f); await respond(db,f.org,id,'accept')
+  await assert.rejects(as(db,f.donor,'delete from donor_items where id=$1',[f.item]),/매칭이 확정된 물품은 삭제/)
+  await assert.rejects(as(db,f.org,'delete from institution_needs where id=$1',[f.need]),/매칭이 확정된 필요 물품은 삭제/)
+  await cancelConfirmed(db,f.donor,id)
+  assert.equal((await as(db,f.org,'delete from institution_needs where id=$1 returning id',[f.need])).length,1)
+  assert.equal((await as(db,f.donor,'delete from donor_items where id=$1 returning id',[f.item])).length,1)
+})
+
+await test('확정 취소: 물품은 기부 가능으로, 필요 물품은 줄인 수량을 되돌린다', async () => {
+  const f=await fixture(db,{quantity:2,needQuantity:5}); const id=await request(db,f); await respond(db,f.org,id,'accept')
+  assert.deepEqual(await state(f),{item:'matched',need:'open',need_qty:3})
+  assert.deepEqual(await cancelConfirmed(db,f.org,id),{status:'cancelled'})
+  assert.deepEqual(await state(f),{item:'available',need:'open',need_qty:5})
+  // 취소 후 다시 요청·수락할 수 있다
+  const again=await request(db,f); await respond(db,f.org,again,'accept')
+  assert.deepEqual(await state(f),{item:'matched',need:'open',need_qty:3})
+})
+
+await test('확정 취소: 모집 완료로 바뀐 필요 물품은 다시 모집 중이 된다', async () => {
+  const f=await fixture(db,{quantity:3,needQuantity:2}); const id=await request(db,f); await respond(db,f.org,id,'accept')
+  assert.deepEqual(await state(f),{item:'matched',need:'fulfilled',need_qty:2})
+  await complete(db,f.donor,id) // 한쪽이 전달 완료를 눌렀어도 최종 완료 전이면 취소할 수 있다
+  await cancelConfirmed(db,f.donor,id)
+  assert.deepEqual(await state(f),{item:'available',need:'open',need_qty:2})
+  assert.equal((await dashboard(db,f.donor)).creditTotal,0)
+})
+
+await test('확정 취소는 당사자만, 최종 완료·대기 중 요청은 취소할 수 없다', async () => {
+  const f=await fixture(db); const id=await request(db,f)
+  await assert.rejects(cancelConfirmed(db,f.donor,id),/이미 처리된/)
+  await respond(db,f.org,id,'accept')
+  await assert.rejects(cancelConfirmed(db,f.other,id),/권한/)
+  await assert.rejects(as(db,null,'select public.cancel_confirmed_match($1)',[id],'anon'),/permission denied/)
+  await finish(db,f,id)
+  await assert.rejects(cancelConfirmed(db,f.org,id),/최종 완료/)
+  await assert.rejects(cancelConfirmed(db,f.org,id),/최종 완료/)
+})
+
+await test('알림 정보: 상대방이 한 일만 event_by_other가 된다', async () => {
+  const f=await fixture(db)
+  let current=await request(db,f)
+  const pick=async(uid)=>(await dashboard(db,uid)).requests.find((r)=>r.id===current)
+  assert.equal((await pick(f.org)).event_by_other,true)   // 받은 요청
+  assert.equal((await pick(f.donor)).event_by_other,false)
+  await respond(db,f.org,current,'accept')
+  assert.equal((await pick(f.donor)).event_by_other,true)  // 내 요청을 상대가 수락
+  assert.equal((await pick(f.org)).event_by_other,false)
+  await complete(db,f.org,current)
+  assert.equal((await pick(f.donor)).event_by_other,true)  // 상대가 먼저 전달 완료
+  await complete(db,f.donor,current)
+  assert.equal((await pick(f.org)).event_by_other,true)    // 상대가 마지막으로 눌러 최종 완료
+  assert.equal((await pick(f.donor)).event_by_other,false)
+  // 확정 취소는 취소한 쪽이 아닌 상대에게 알림
+  const g=await fixture(db); current=await request(db,g); await respond(db,g.org,current,'accept'); await cancelConfirmed(db,g.donor,current)
+  const forOrg=await pick(g.org)
+  assert.equal(forOrg.event_by_other,true); assert.equal(forOrg.cancel_kind,'confirmed'); assert.equal(forOrg.cancelled_by_me,false)
+  assert.equal((await pick(g.donor)).cancelled_by_me,true)
+})
 
 await test('운영 검증 SQL도 동일하게 통과하고 임시 데이터를 남기지 않는다', async () => {
   const before=(await admin(db,'select count(*) n from matching_credit_entries'))[0].n

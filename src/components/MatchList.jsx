@@ -17,7 +17,7 @@ const SCORE_CHIPS = [
  * renderDetail을 주면 항목마다 detailLabel 버튼이 생기고, 누르면 그 내용(기부·수령 방법)을 펼친다.
  * photo를 주면 항목 왼쪽에 물품 사진 썸네일을 보여준다. (기관 화면의 기부 물품 목록)
  */
-export default function MatchList({ matches, primary, secondary, detailLabel, renderDetail, renderContact, renderAction, photo }) {
+export default function MatchList({ matches, primary, secondary, detailLabel, renderDetail, renderAction, photo }) {
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [openIds, setOpenIds] = useState(() => new Set())
   const remaining = matches.length - visible
@@ -69,7 +69,6 @@ export default function MatchList({ matches, primary, secondary, detailLabel, re
                   </button>
                 )}
               </div>
-              {renderContact && renderContact(m)}
               {renderAction && renderAction(m)}
               {renderDetail && isOpen && <div className="mt-2.5">{renderDetail(m)}</div>}
             </li>

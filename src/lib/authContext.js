@@ -4,7 +4,8 @@ export const AuthContext = createContext(null)
 
 /**
  * 로그인 상태.
- * { session, profile, loading, signIn, signUp, signOut, refreshProfile }
+ * { session, profile, loading, signIn, signUp, signOut, refreshProfile, passwordRecovery, requestPasswordReset, updatePassword }
+ * - passwordRecovery: 비밀번호 재설정 링크로 들어와 새 비밀번호를 정해야 하면 true
  * - profile: { id, role: 'donor' | 'institution', nickname, org_name, avatar_url } 또는 로그아웃 상태면 null
  * - loading: 처음 로그인 상태를 확인하는 동안 true
  */

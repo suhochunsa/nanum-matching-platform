@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Avatar from '../components/Avatar.jsx'
 import FormField from '../components/FormField.jsx'
 import { buttonClass, fieldClass } from '../components/ui.js'
@@ -24,17 +24,20 @@ function validate(mode, role, v) {
     if (name.length < 2 || name.length > max) errors.name = `${label}은 2~${max}자로 입력해 주세요.`
   }
   if (!EMAIL_RE.test(v.email.trim())) errors.email = '이메일 형식이 올바르지 않아요.'
+  if (mode === 'forgot') return errors
   if (v.password.length < MIN_PASSWORD) errors.password = `비밀번호는 ${MIN_PASSWORD}자 이상이에요.`
   if (mode === 'signup' && v.passwordConfirm !== v.password) errors.passwordConfirm = '비밀번호가 서로 달라요.'
   return errors
 }
 
 export default function LoginPage() {
-  const { profile, loading, signIn, signUp } = useAuth()
+  const { profile, loading, signIn, signUp, requestPasswordReset } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [role, setRole] = useState('donor')
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
+  // 'login' | 'signup' | 'forgot'(비밀번호 찾기). 재설정 화면에서 { state: { mode: 'forgot' } }로 올 수 있다.
+  const [mode, setMode] = useState(location.state?.mode === 'forgot' ? 'forgot' : 'login')
   const [values, setValues] = useState({ email: '', password: '', passwordConfirm: '', name: '', avatar: null })
   const [preview, setPreview] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -78,6 +81,15 @@ export default function LoginPage() {
     setBusy(true)
     try {
       const email = values.email.trim()
+      if (mode === 'forgot') {
+        await requestPasswordReset(email)
+        // 가입하지 않은 이메일인지는 알려주지 않는다 (다른 사람이 가입 여부를 알아내지 못하게)
+        setMessage({
+          tone: 'info',
+          text: `${email}(으)로 가입한 계정이 있으면 비밀번호 재설정 메일을 보냈어요. 메일의 링크를 누르고 새 비밀번호를 정해 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.`,
+        })
+        return
+      }
       if (mode === 'login') {
         const p = await signIn(role, email, values.password)
         navigate(HOME_OF[p.role])
@@ -111,31 +123,37 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-md px-4 pt-14">
       <h1 className="text-center text-4xl font-display leading-tight text-ink">
-        {mode === 'login' ? '다시 만나서 반가워요.' : '나눔을 시작해요.'}
+        {mode === 'login' ? '다시 만나서 반가워요.' : mode === 'signup' ? '나눔을 시작해요.' : '비밀번호를 잊으셨나요?'}
       </h1>
       <p className="mt-3 text-center font-light text-muted">
-        {mode === 'login' ? '기부자 또는 기관 계정으로 로그인하세요.' : '기부자인지 기관인지 먼저 골라 주세요.'}
+        {mode === 'login'
+          ? '기부자 또는 기관 계정으로 로그인하세요.'
+          : mode === 'signup'
+            ? '기부자인지 기관인지 먼저 골라 주세요.'
+            : '가입한 이메일을 입력하면 새 비밀번호를 정하는 링크를 보내드려요.'}
       </p>
 
       {/* 인증 카드: 옅은 테두리의 흰 카드 안에 회색 입력칸 */}
       <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5 rounded-3xl border border-hairline-soft p-6 sm:p-8">
-        {/* 기부자 / 기관 선택 */}
-        <div role="radiogroup" aria-label="계정 종류" className="grid grid-cols-2 gap-1 rounded-full bg-canvas-soft p-1">
-          {['donor', 'institution'].map((r) => (
-            <button
-              key={r}
-              type="button"
-              role="radio"
-              aria-checked={role === r}
-              onClick={() => setRole(r)}
-              className={`rounded-full py-2.5 text-sm font-semibold transition-colors ${
-                role === r ? 'bg-canvas text-ink shadow-sm' : 'text-muted hover:text-ink'
-              }`}
-            >
-              {ROLE_LABEL[r]}
-            </button>
-          ))}
-        </div>
+        {/* 기부자 / 기관 선택 (비밀번호 찾기에는 필요 없음) */}
+        {mode !== 'forgot' && (
+          <div role="radiogroup" aria-label="계정 종류" className="grid grid-cols-2 gap-1 rounded-full bg-canvas-soft p-1">
+            {['donor', 'institution'].map((r) => (
+              <button
+                key={r}
+                type="button"
+                role="radio"
+                aria-checked={role === r}
+                onClick={() => setRole(r)}
+                className={`rounded-full py-2.5 text-sm font-semibold transition-colors ${
+                  role === r ? 'bg-canvas text-ink shadow-sm' : 'text-muted hover:text-ink'
+                }`}
+              >
+                {ROLE_LABEL[r]}
+              </button>
+            ))}
+          </div>
+        )}
 
         {message && (
           <p
@@ -194,22 +212,31 @@ export default function LoginPage() {
           />
         </FormField>
 
-        <FormField
-          id="password"
-          label="비밀번호"
-          required
-          hint={mode === 'signup' ? `${MIN_PASSWORD}자 이상` : undefined}
-          error={errors.password}
-        >
-          <input
+        {mode !== 'forgot' && (
+          <FormField
             id="password"
-            type="password"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            value={values.password}
-            onChange={update('password')}
-            className={fieldClass(errors.password)}
-          />
-        </FormField>
+            label="비밀번호"
+            required
+            hint={mode === 'signup' ? `${MIN_PASSWORD}자 이상` : undefined}
+            error={errors.password}
+          >
+            <input
+              id="password"
+              type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={values.password}
+              onChange={update('password')}
+              className={fieldClass(errors.password)}
+            />
+          </FormField>
+        )}
+        {mode === 'login' && (
+          <p className="-mt-2 text-right">
+            <button type="button" onClick={() => switchMode('forgot')} className="text-sm text-muted underline underline-offset-2 hover:text-ink">
+              비밀번호를 잊으셨나요?
+            </button>
+          </p>
+        )}
 
         {mode === 'signup' && (
           <FormField id="passwordConfirm" label="비밀번호 확인" required error={errors.passwordConfirm}>
@@ -229,19 +256,34 @@ export default function LoginPage() {
           disabled={busy}
           className={`${buttonClass('primary', 'lg')} w-full disabled:cursor-wait`}
         >
-          {busy ? '처리하는 중…' : mode === 'login' ? `${ROLE_LABEL_RO[role]} 로그인` : `${ROLE_LABEL_RO[role]} 가입하기`}
+          {busy
+            ? '처리하는 중…'
+            : mode === 'login'
+              ? `${ROLE_LABEL_RO[role]} 로그인`
+              : mode === 'signup'
+                ? `${ROLE_LABEL_RO[role]} 가입하기`
+                : '재설정 메일 보내기'}
         </button>
 
-        <p className="text-center text-sm text-muted">
-          {mode === 'login' ? '아직 계정이 없나요?' : '이미 계정이 있나요?'}{' '}
-          <button
-            type="button"
-            onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-            className="font-semibold text-ink underline underline-offset-2"
-          >
-            {mode === 'login' ? '회원가입' : '로그인'}
-          </button>
-        </p>
+        {mode === 'forgot' ? (
+          <p className="text-center text-sm text-muted">
+            비밀번호가 생각났나요?{' '}
+            <button type="button" onClick={() => switchMode('login')} className="font-semibold text-ink underline underline-offset-2">
+              로그인
+            </button>
+          </p>
+        ) : (
+          <p className="text-center text-sm text-muted">
+            {mode === 'login' ? '아직 계정이 없나요?' : '이미 계정이 있나요?'}{' '}
+            <button
+              type="button"
+              onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+              className="font-semibold text-ink underline underline-offset-2"
+            >
+              {mode === 'login' ? '회원가입' : '로그인'}
+            </button>
+          </p>
+        )}
       </form>
     </div>
   )

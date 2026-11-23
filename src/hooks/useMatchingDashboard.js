@@ -1,31 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchMatchingDashboard } from '../data/store.js'
+import { createContext, useContext } from 'react'
 
+export const DashboardContext = createContext({ data: null, error: '', reload: async () => {} })
+
+/**
+ * 내 매칭 요청함 데이터 { data, error, reload }.
+ * DashboardProvider가 로그인한 동안 15초마다(그리고 창으로 돌아올 때) 갱신한다.
+ * 상단 종 알림과 마이페이지가 같은 데이터를 쓰므로, 마이페이지에서 처리하면 종 숫자도 바로 바뀐다.
+ */
 export default function useMatchingDashboard() {
-  const [data, setData] = useState(null)
-  const [error, setError] = useState('')
-  const sequence = useRef(0)
-  const reload = useCallback(async () => {
-    const current = ++sequence.current
-    try {
-      const next = await fetchMatchingDashboard()
-      if (sequence.current === current) { setData(next); setError('') }
-    } catch (err) {
-      if (sequence.current === current) setError(err.message)
-    }
-  }, [])
-
-  useEffect(() => {
-    queueMicrotask(reload)
-    const timer = setInterval(reload, 15000)
-    window.addEventListener('focus', reload)
-    return () => {
-      // 요청 순서 번호는 DOM 참조가 아니며, 진행 중 응답을 무효화하려고 최신 값을 증가시킨다.
-      // oxlint-disable-next-line react-hooks/exhaustive-deps
-      sequence.current++
-      clearInterval(timer)
-      window.removeEventListener('focus', reload)
-    }
-  }, [reload])
-  return { data, error, reload }
+  return useContext(DashboardContext)
 }

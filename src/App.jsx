@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import DonorPage from './pages/DonorPage.jsx'
 import InstitutionPage from './pages/InstitutionPage.jsx'
 import MyPage from './pages/MyPage.jsx'
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/donor" element={<DonorPage />} />
         <Route path="/institution" element={<InstitutionPage />} />
         <Route path="/mypage" element={<MyPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         {/* 예전 주소로 들어와도 마이페이지로 */}
         <Route path="/profile" element={<Navigate to="/mypage" replace />} />
       </Route>

@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CategoryTree from '../components/CategoryTree.jsx'
 import DataNotice from '../components/DataNotice.jsx'
-import DonorContact from '../components/DonorContact.jsx'
 import FormField from '../components/FormField.jsx'
 import FoodNotice from '../components/FoodNotice.jsx'
 import GuideBox from '../components/GuideBox.jsx'
@@ -84,7 +83,7 @@ export default function InstitutionPage() {
     const need = { categories: [...values.categories], title: values.title.trim(), quantity: Number(values.quantity) }
     let needId = null
     setRegisterError('')
-    // 실제 저장한 내 필요 물품과의 매칭만 DB에서 연락처 조회를 허용한다.
+    // 매칭 요청은 실제로 저장한 내 필요 물품에 연결된다.
     if (isInstitution && data.source === 'supabase') {
       try {
         needId = await registerMatchingNeed(need, institution, profile.id)
@@ -296,7 +295,7 @@ export default function InstitutionPage() {
           >
             {checking ? '불러오는 중…' : '일치 결과 확인하기'}
           </button>
-          {isInstitution && <p className="text-xs text-muted">확인하면 필요 물품을 함께 등록하고, 매칭된 기부자의 연락처를 바로 보여드려요.</p>}
+          {isInstitution && <p className="text-xs text-muted">확인하면 필요 물품을 함께 등록해요. 기부자 연락처는 매칭 요청을 기부자가 수락하면 마이페이지 요청함에서 볼 수 있어요.</p>}
         </form>
 
         {/* 오른쪽: 데이터베이스 내 일치 결과 */}
@@ -346,9 +345,6 @@ export default function InstitutionPage() {
                         }`
                       }
                       photo={(m) => m.photo}
-                      renderContact={(m) => (
-                        <DonorContact key={`${m.id}-${result.needId ?? ''}-${profile?.id ?? 'guest'}`} itemId={m.id} needId={result.needId} source={result.source} profile={profile} />
-                      )}
                       renderAction={(m) => (
                         <MatchRequestAction source={result.source} allowed={isInstitution} targetOwnerId={m.ownerId}
                           myMethods={result.institution.methods} otherMethods={m.methods} quantity={m.quantity}

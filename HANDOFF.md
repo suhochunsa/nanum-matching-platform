@@ -269,3 +269,23 @@ npm run dev
 - 소비기한 사진이 없는 식품은 정보 없음으로 보고 매칭 불가. 사진은 한 번 올리면 바꿀 수 없음
 - register_donor_item에 p_food_expiry_photo_url 추가(16개 매개변수). 이 SQL보다 화면을 먼저 배포하면 모든 등록이 실패함
 - 검증: `npm test` 34개
+
+## 치명적 문제 수정 · 종 알림 · 비밀번호 찾기 (2026-11-23, `20261123000000_confirmed_cancel_notify.sql`)
+
+- 기부자 연락처: 기관 매칭 결과에서 요청·수락 전에 기부자 전화번호를 보여주던 `get_donor_contact`와 `DonorContact.jsx`를 없앰.
+  연락처는 매칭이 확정된 뒤 마이페이지 요청함에서만 서로 보임(get_my_matching_dashboard의 contact_phone)
+- 확정(전달 대기) 매칭이 걸린 기부 물품·필요 물품은 삭제 불가(트리거 protect_confirmed_delete). 예전에는 삭제하면 매칭이 조용히 사라졌음
+- 확정 매칭 취소 `cancel_confirmed_match(id)`: 기부자·기관 누구나 최종 완료 전까지. 물품은 다시 기부 가능,
+  필요 물품은 수락 때 줄인 수량(matches.need_reduced)과 모집 완료(need_closed)를 되돌림. 크레딧은 적립 안 됨
+- matches에 cancelled_by·cancelled_at·cancel_kind('request' 요청 취소 / 'auto' 다른 매칭 확정으로 자동 취소 / 'confirmed' 확정 취소)·completed_by 추가
+- 상단 종 알림(`NotificationBell.jsx`, 규칙은 `src/data/notifications.js`)
+  - 할 일(받은 요청 응답, 내 전달 완료 차례)은 처리할 때까지 숫자에 포함, 소식(상대가 수락·거절·취소·최종 완료)은 종을 열면 숫자에서 빠짐
+  - 마지막으로 연 시각은 브라우저 localStorage(계정별). 처음 쓰는 브라우저는 그때부터 셈
+  - 요청함 데이터는 `DashboardProvider`가 15초마다 불러와 종과 마이페이지가 같이 씀 (요청함의 event_at·event_by_other)
+  - 알림을 누르면 마이페이지 요청함의 그 요청으로 이동(받은/보낸 탭 자동 선택, 테두리 강조)
+- 비밀번호 찾기: 로그인 화면 '비밀번호를 잊으셨나요?' → 재설정 메일 → `/reset-password`에서 새 비밀번호 저장
+  - Supabase 대시보드 Authentication → URL Configuration → Redirect URLs에 `https://nanum-matching-platform.vercel.app/reset-password` 필요
+  - 허용 목록에 없어 홈으로 돌아와도 AuthProvider가 PASSWORD_RECOVERY를 감지해 재설정 화면으로 보냄
+  - 기본 메일 발송(Supabase 내장 SMTP)은 시간당 보낼 수 있는 수가 적음
+- 휴대폰 상단 메뉴: 종 자리 때문에 기관의 '필요 물품 등록'을 '물품 등록'으로 줄임
+- 검증: `npm test` 45개

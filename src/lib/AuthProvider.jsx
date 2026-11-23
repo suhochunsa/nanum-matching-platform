@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { compressImage } from '../data/image.js'
 import { fetchProfile, updateMyProfile, uploadAvatar } from '../data/store.js'
 import { AuthContext, ROLE_LABEL } from './authContext.js'
-import { supabase } from './supabase.js'
+import { openedFromRecoveryLink, supabase } from './supabase.js'
 
 // Supabase Auth 오류 메시지를 한국어로 바꾼다.
 function authErrorMessage(error) {
@@ -13,6 +13,9 @@ function authErrorMessage(error) {
     return '이미 가입된 이메일이에요. 기존 비밀번호로 로그인해 주세요.'
   if (msg.includes('Password should be')) return '비밀번호가 너무 짧거나 쉬워요. 8자 이상으로 정해 주세요.'
   if (msg.includes('rate limit')) return '요청이 너무 많아요. 잠시 후 다시 시도해 주세요.'
+  if (msg.includes('you can only request this after')) return '메일은 잠시 후에 다시 보낼 수 있어요. 1분쯤 기다렸다가 다시 시도해 주세요.'
+  if (msg.includes('should be different from the old password')) return '이전과 다른 비밀번호로 정해 주세요.'
+  if (msg.includes('Auth session missing')) return '링크가 만료됐어요. 비밀번호 찾기를 다시 해 주세요.'
   // 프로필을 만드는 DB 트리거가 실패한 경우 (대부분 이미 쓰는 기관명)
   if (msg.includes('Database error saving new user')) return '가입하지 못했어요. 이미 다른 계정이 쓰는 기관명일 수 있어요.'
   return msg || '알 수 없는 오류가 났어요.'
@@ -23,6 +26,8 @@ export default function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(Boolean(supabase))
+  // 비밀번호 재설정 링크로 들어와 새 비밀번호를 정해야 하는 상태 (Layout이 재설정 화면으로 보낸다)
+  const [passwordRecovery, setPasswordRecovery] = useState(openedFromRecoveryLink)
 
   const loadProfile = useCallback(async (user) => {
     const p = user ? await fetchProfile(user.id) : null
@@ -41,8 +46,9 @@ export default function AuthProvider({ children }) {
       if (active) setLoading(false)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession)
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
       // 이 콜백 안에서 바로 Supabase를 다시 부르면 멈출 수 있어서 다음 차례로 미룬다. (supabase-js 권장 방식)
       setTimeout(() => loadProfile(nextSession?.user), 0)
     })
@@ -114,13 +120,29 @@ export default function AuthProvider({ children }) {
   const signOut = useCallback(async () => {
     await supabase?.auth.signOut()
     setProfile(null)
+    setPasswordRecovery(false)
+  }, [])
+
+  /** 비밀번호 재설정 메일 보내기. 메일의 링크를 누르면 /reset-password로 돌아온다. */
+  const requestPasswordReset = useCallback(async (email) => {
+    if (!supabase) throw new Error('데이터베이스 접속 정보가 없어 메일을 보낼 수 없어요.')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` })
+    if (error) throw new Error(authErrorMessage(error))
+  }, [])
+
+  /** 새 비밀번호 저장 (재설정 링크로 로그인된 상태에서) */
+  const updatePassword = useCallback(async (password) => {
+    if (!supabase) throw new Error('데이터베이스 접속 정보가 없어 저장할 수 없어요.')
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw new Error(authErrorMessage(error))
+    setPasswordRecovery(false)
   }, [])
 
   const refreshProfile = useCallback(() => loadProfile(session?.user), [loadProfile, session])
 
   const value = useMemo(
-    () => ({ session, profile, loading, signIn, signUp, signOut, refreshProfile }),
-    [session, profile, loading, signIn, signUp, signOut, refreshProfile],
+    () => ({ session, profile, loading, signIn, signUp, signOut, refreshProfile, passwordRecovery, requestPasswordReset, updatePassword }),
+    [session, profile, loading, signIn, signUp, signOut, refreshProfile, passwordRecovery, requestPasswordReset, updatePassword],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

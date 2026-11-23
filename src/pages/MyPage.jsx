@@ -7,13 +7,14 @@ import MyMatchRequests from '../components/mypage/MyMatchRequests.jsx'
 import MyCredits from '../components/mypage/MyCredits.jsx'
 import useMatchingDashboard from '../hooks/useMatchingDashboard.js'
 import ProfileSettings from '../components/mypage/ProfileSettings.jsx'
-import { needsMyCompletion } from '../data/status.js'
+import { isMyAction } from '../data/notifications.js'
 import { buttonClass, pageTitleClass } from '../components/ui.js'
 import { ROLE_LABEL, displayName, useAuth } from '../lib/authContext.js'
 
 /**
  * 마이페이지: 내 물품 관리 + 프로필 수정.
  * 다른 화면에서 { state: { tab: 'profile', notice } }로 열면 프로필 탭과 안내 문구를 바로 보여준다.
+ * 상단 알림은 { state: { tab: 'requests', direction: 'received' | 'sent', focus: 매칭 id } }로 연다.
  */
 export default function MyPage() {
   const { session, profile, loading } = useAuth()
@@ -35,14 +36,25 @@ export default function MyPage() {
     )
   }
 
-  return <AccountPage key={profile.id} session={session} profile={profile} initialTab={location.state?.tab} initialNotice={location.state?.notice} />
+  // 마이페이지를 보고 있을 때 알림을 눌러도 해당 탭으로 다시 열리도록 이동할 때마다 새로 그린다
+  return (
+    <AccountPage
+      key={`${profile.id}:${location.key}`}
+      session={session}
+      profile={profile}
+      initialTab={location.state?.tab}
+      initialNotice={location.state?.notice}
+      initialDirection={location.state?.direction}
+      focusId={location.state?.focus}
+    />
+  )
 }
 
-function AccountPage({ session, profile, initialTab, initialNotice }) {
+function AccountPage({ session, profile, initialTab, initialNotice, initialDirection, focusId }) {
   const [tab, setTab] = useState(initialTab ?? 'items')
   const { data, error, reload } = useMatchingDashboard()
   // 내가 처리할 일: 받은 요청 응답 + 내가 아직 누르지 않은 전달 완료
-  const pending = data?.requests.filter((row) => (row.incoming && row.status === 'requested') || needsMyCompletion(row)).length ?? 0
+  const pending = data?.requests.filter(isMyAction).length ?? 0
   // 매칭이 확정되거나 최종 완료되면 물품 목록을 다시 불러온다 (물품 상태가 매칭됨 → 기부 완료로 바뀜)
   const matchRevision = data?.requests.filter((row) => ['confirmed', 'completed'].includes(row.status)).map((row) => `${row.id}:${row.status}`).join(',') ?? ''
   const isDonor = profile.role === 'donor'
@@ -94,7 +106,7 @@ function AccountPage({ session, profile, initialTab, initialNotice }) {
       {error && <p role="alert" className="mt-4 text-sm text-red-700">요청·크레딧을 불러오지 못했어요. {error} <button type="button" onClick={reload} className="underline">다시 불러오기</button></p>}
       <div role="tabpanel" className="mt-6">
         {tab === 'items' && (isDonor ? <MyDonorItems key={matchRevision} userId={profile.id} /> : <MyNeeds key={matchRevision} userId={profile.id} />)}
-        {tab === 'requests' && (data ? <MyMatchRequests requests={data.requests} reload={reload} /> : <p className="text-sm text-muted">요청을 불러오는 중…</p>)}
+        {tab === 'requests' && (data ? <MyMatchRequests requests={data.requests} reload={reload} initialDirection={initialDirection} focusId={focusId} /> : <p className="text-sm text-muted">요청을 불러오는 중…</p>)}
         {tab === 'credits' && isDonor && (data ? <MyCredits total={data.creditTotal} entries={data.creditEntries} /> : <p className="text-sm text-muted">크레딧을 불러오는 중…</p>)}
         {tab === 'profile' && <ProfileSettings initialNotice={initialNotice} />}
       </div>

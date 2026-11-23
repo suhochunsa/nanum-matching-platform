@@ -270,16 +270,6 @@ export async function updateMyInstitution(id, fields) {
   ensureChanged(data, '수정')
 }
 
-/** DB가 요청 기관의 필요 물품 소유권과 매칭 여부를 확인한 뒤 전화번호를 반환한다. */
-export async function fetchDonorContact(itemId, needId) {
-  const { data, error } = await requireClient().rpc('get_donor_contact', { p_item_id: itemId, p_need_id: needId })
-  if (error) {
-    if (error.code === 'P0001' || error.code === '42501') throw new Error(friendlyError(error))
-    throw new Error('연락처를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
-  }
-  return data
-}
-
 /** 같은 모집 중인 필요 물품은 재사용해서 매칭 검색마다 중복 등록하지 않는다. */
 export async function registerMatchingNeed(need, institution, userId) {
   const mine = await fetchMyInstitution(userId)
@@ -316,6 +306,13 @@ export async function fetchMatchingDashboard() {
 /** 전달 완료 누르기. 기부자·기관이 모두 누르면 최종 완료되고 그때 기부자에게 크레딧이 적립된다. */
 export async function completeItemMatch(matchId) {
   const { data, error } = await requireClient().rpc('complete_item_match', { p_match_id: matchId })
+  if (error) throw new Error(friendlyError(error))
+  return data
+}
+
+/** 확정된 매칭 취소 (기부자·기관 누구나, 최종 완료 전까지). 물품·필요 물품 상태는 DB가 되돌린다. */
+export async function cancelConfirmedMatch(matchId) {
+  const { data, error } = await requireClient().rpc('cancel_confirmed_match', { p_match_id: matchId })
   if (error) throw new Error(friendlyError(error))
   return data
 }
