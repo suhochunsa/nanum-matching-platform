@@ -204,7 +204,7 @@ export default function DonorPage() {
               id="donorPhone"
               label="연락처"
               required
-              hint="로그인한 기관이 매칭 결과에서 이 번호를 보고 연락할 수 있어요."
+              hint="매칭이 확정되면 상대 기관만 마이페이지 요청함에서 이 번호를 볼 수 있어요."
               error={errors.donorPhone}
             >
               <input
