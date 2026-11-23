@@ -45,7 +45,7 @@ function BellIcon() {
 }
 
 /**
- * 상단 종 알림. 왼쪽 아래 빨간 원에 알림 수를 보여주고, 누르면 알림 목록을 연다.
+ * 상단 종 알림. 오른쪽 아래 빨간 원에 알림 수를 보여주고, 누르면 알림 목록을 연다.
  * 알림을 누르면 마이페이지 매칭 요청함의 그 요청으로 이동한다.
  */
 export default function NotificationBell({ userId }) {
@@ -103,7 +103,7 @@ export default function NotificationBell({ userId }) {
         {count > 0 && (
           <span
             aria-hidden="true"
-            className="absolute -bottom-0.5 -left-0.5 h-[18px] min-w-[18px] rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-[18px] text-white tabular-nums ring-2 ring-canvas-soft"
+            className="absolute -bottom-0.5 -right-0.5 h-[18px] min-w-[18px] rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-[18px] text-white tabular-nums ring-2 ring-canvas-soft"
           >
             {label}
           </span>
