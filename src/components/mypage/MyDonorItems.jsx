@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCategory } from '../../data/categories.js'
-import { availabilityLabel, isExpired, todayString } from '../../data/dates.js'
+import { isExpired, todayString } from '../../data/dates.js'
 import { foodState, foodSummary, isFood } from '../../data/food.js'
 import { compressImage } from '../../data/image.js'
-import { ITEM_STATUS, ITEM_STATUS_CHOICES } from '../../data/status.js'
+import { ITEM_STATUS, ITEM_STATUS_CHOICES, itemPeriodLabel } from '../../data/status.js'
 import { deleteDonorItem, fetchMyDonorItems, fillFoodInfo, updateDonorItem, uploadItemPhoto } from '../../data/store.js'
 import { validateDonorItemEdit, validateFoodInfo } from '../../data/validation.js'
 import FoodFields from '../FoodFields.jsx'
@@ -105,10 +105,12 @@ export default function MyDonorItems({ userId }) {
                     </div>
                     <p className="mt-0.5 text-xs text-muted">{item.categories.map(formatCategory).join(', ')}</p>
                     <p className="mt-1 text-sm text-muted">
-                      수량 {item.quantity} · {item.condition} ·{' '}
-                      {isFood(item.categories) ? foodSummary(item) : `기부 가능: ${availabilityLabel(item.availableUntil)}`}
+                      {[`수량 ${item.quantity}`, item.condition, isFood(item.categories) ? foodSummary(item) : itemPeriodLabel(item)]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
-                    {isFood(item.categories) && (
+                    {/* 소비기한 경고·사진 대조 안내는 아직 기부 가능한 식품에만 (기부 완료된 식품에 '소비기한 지남'이 뜨지 않게) */}
+                    {isFood(item.categories) && item.status === 'available' && (
                       <div className="mt-2">
                         <FoodNotice item={item} />
                       </div>

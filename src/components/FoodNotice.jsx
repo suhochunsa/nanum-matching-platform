@@ -2,11 +2,11 @@ import { formatDate } from '../data/dates.js'
 import { COLD_STORAGE, expiryWarning, foodState, foodSummary } from '../data/food.js'
 import PhotoThumb from './PhotoThumb.jsx'
 
-/** 사진 한 장 + 아래 작은 설명 */
+/** 사진 한 장 + 아래 작은 설명. 날짜·글자가 잘리지 않게 사진 전체를 보여준다. */
 function CaptionedPhoto({ src, alt, caption }) {
   return (
     <figure className="flex flex-col items-center gap-1">
-      <PhotoThumb src={src} alt={alt} />
+      <PhotoThumb src={src} alt={alt} size="wide" fit="contain" />
       <figcaption className="text-[11px] text-muted">{caption}</figcaption>
     </figure>
   )

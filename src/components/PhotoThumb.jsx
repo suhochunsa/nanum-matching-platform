@@ -4,15 +4,19 @@ import { createPortal } from 'react-dom'
 const BOX = {
   md: 'h-16 w-16',
   lg: 'h-20 w-20',
+  // 식품 소비기한·라벨 사진: 글자가 가로로 길게 찍히는 경우가 많아 가로로 넓게
+  wide: 'h-24 w-40',
 }
 
 /**
  * 물품 사진 썸네일(모서리 16px). 누르면 화면 가운데에 크게 보여주고, 바깥을 누르거나 Esc로 닫는다.
  * 사진이 없으면 같은 크기의 "사진 없음" 칸을 보여줘서 카드 모양이 흐트러지지 않게 한다.
+ * fit: 'cover'(기본, 칸을 꽉 채우고 넘치는 부분은 잘림) | 'contain'(사진 전체가 보이게, 남는 곳은 흰 배경)
+ *   소비기한 사진처럼 가장자리의 글자가 잘리면 안 되는 사진은 'contain'을 쓴다.
  * 확대 화면은 document.body에 바로 그린다(portal). 카드 안에 그리면 카드의 층(z-index)에 갇혀서
  * 다른 카드의 사진이 확대 화면 위로 비쳐 보인다.
  */
-export default function PhotoThumb({ src, alt, size = 'md' }) {
+export default function PhotoThumb({ src, alt, size = 'md', fit = 'cover' }) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -41,8 +45,8 @@ export default function PhotoThumb({ src, alt, size = 'md' }) {
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} 사진 크게 보기`} className={`${box} overflow-hidden`}>
-        <img src={src} alt={alt} className="h-full w-full object-cover" />
+      <button type="button" onClick={() => setOpen(true)} aria-label={`${alt} 사진 크게 보기`} className={`${box} overflow-hidden ${fit === 'contain' ? 'bg-canvas' : ''}`}>
+        <img src={src} alt={alt} className={`h-full w-full ${fit === 'contain' ? 'object-contain' : 'object-cover'}`} />
       </button>
 
       {open &&
